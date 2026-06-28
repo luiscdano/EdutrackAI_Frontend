@@ -1,73 +1,54 @@
-# React + TypeScript + Vite
+# Login - EduTrack AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Desarrollo del Login
 
-Currently, two official plugins are available:
+Para desarrollar el Login de EduTrack AI se creó una interfaz moderna, limpia y completamente responsiva utilizando React, TypeScript y Tailwind CSS. Se organizó el proyecto siguiendo una estructura basada en componentes reutilizables con el objetivo de facilitar el mantenimiento del código y permitir que las mismas piezas puedan utilizarse en otras pantallas del sistema.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Se crearon componentes reutilizables para los botones, las tarjetas (Card) y el logo de la aplicación, manteniendo un diseño uniforme en toda la interfaz. Además, el Login fue desarrollado pensando en la escalabilidad del proyecto, separando los componentes de la página principal para mantener una mejor organización del código.
 
-## React Compiler
+La estructura utilizada fue la siguiente:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+│
+├── components/
+│   ├── ui/
+│   │   ├── Button.tsx
+│   │   └── Card.tsx
+│   │
+│   └── Logo.tsx
+│
+├── pages/
+│   └── Login/
+│       └── Login.tsx
+│
+├── assets/
+├── App.tsx
+└── main.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Paleta de colores
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+La interfaz utiliza una combinación de colores oscuros con tonos azules para transmitir una apariencia moderna y tecnológica.
+
+| Elemento | Color | Código |
+|----------|--------|---------|
+| Fondo principal | Azul oscuro | `#0F172A` |
+| Fondo del formulario (Card) | Gris azulado | `#1E293B` |
+| Bordes | Gris | `#334155` |
+| Botón principal | Azul | `#3B82F6` |
+| Hover del botón | Azul oscuro | `#2563EB` |
+| Texto principal | Blanco | `#FFFFFF` |
+| Texto secundario | Gris claro | `#94A3B8` |
+| Placeholder | Gris | `#64748B` |
+
+---
+
+## Tecnologías utilizadas
+
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
