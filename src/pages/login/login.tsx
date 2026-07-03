@@ -1,7 +1,7 @@
-import Button from "../../components/ui/button";
-import Card from "../../components/ui/card";
-import Input from "../../components/ui/input";
-import PasswordInput from "../../components/ui/passwordinput";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import PasswordInput from "../../components/ui/PasswordInput";
 
 const Login = () => {
   return (
