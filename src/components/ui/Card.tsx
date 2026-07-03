@@ -1,12 +1,59 @@
-import type { ReactNode } from "react";
+import type {
+  HTMLAttributes,
+  ReactNode,
+} from "react";
 
-interface CardProps {
+import { cn } from "../../utils/cn";
+
+type CardVariant = "default" | "bordered" | "elevated";
+type CardPadding = "none" | "sm" | "md" | "lg";
+
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
+  variant?: CardVariant;
+  padding?: CardPadding;
+  interactive?: boolean;
 }
 
-const Card = ({ children }: CardProps) => {
+const variantClasses: Record<CardVariant, string> = {
+  default:
+    "border border-border bg-surface",
+
+  bordered:
+    "border-2 border-border bg-surface",
+
+  elevated:
+    "border border-border bg-surface shadow-card",
+};
+
+const paddingClasses: Record<CardPadding, string> = {
+  none: "p-0",
+  sm: "p-4",
+  md: "p-6",
+  lg: "p-8",
+};
+
+const Card = ({
+  children,
+  variant = "elevated",
+  padding = "lg",
+  interactive = false,
+  className,
+  ...props
+}: CardProps) => {
   return (
-    <div className="w-full max-w-md rounded-2xl bg-slate-800 p-8 shadow-xl">
+    <div
+      {...props}
+      className={cn(
+        "w-full rounded-card",
+        "transition duration-200",
+        variantClasses[variant],
+        paddingClasses[padding],
+        interactive &&
+          "hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-lg",
+        className,
+      )}
+    >
       {children}
     </div>
   );
