@@ -1,104 +1,85 @@
-# Login - EduTrack AI
+# EduTrack AI Frontend
 
-## Desarrollo del Login
+Interfaz web de EduTrack AI desarrollada con React, TypeScript, Tailwind CSS y Vite.
 
-Para desarrollar el Login de **EduTrack AI** se creó una interfaz moderna, limpia y completamente responsiva utilizando **React**, **TypeScript** y **Tailwind CSS**.
-
-El proyecto fue organizado siguiendo una arquitectura basada en componentes reutilizables y una separación clara de responsabilidades, permitiendo que la aplicación pueda crecer de forma ordenada a medida que se desarrollen nuevos módulos como Dashboard, Quizzes, Recomendaciones y Perfil.
-
-Los componentes visuales reutilizables se encuentran separados de las páginas, mientras que también se preparó la estructura del proyecto para incorporar servicios, hooks, layouts, rutas, tipos, utilidades y constantes sin afectar la organización del código.
-
----
-
-## Estructura del proyecto
+## Arquitectura del proyecto
 
 ```text
 src/
-│
 ├── assets/
 │   ├── fonts/
 │   ├── icons/
 │   └── images/
-│
 ├── components/
 │   ├── common/
-│   │   └── Logo.tsx
-│   │
 │   ├── layout/
-│   │
 │   └── ui/
 │       ├── Button.tsx
 │       ├── Card.tsx
 │       ├── Input.tsx
 │       └── PasswordInput.tsx
-│
 ├── constants/
-│
 ├── hooks/
-│
 ├── layouts/
-│
 ├── pages/
-│   └── Login/
+│   └── login/
 │       └── Login.tsx
-│
 ├── routes/
-│
 ├── services/
-│
 ├── types/
-│
 ├── utils/
-│
 ├── App.tsx
+├── index.css
 └── main.tsx
 ```
 
----
+## Responsabilidades
 
-## Organización del proyecto
+- `assets/`: imágenes, iconos y fuentes.
+- `components/common/`: componentes compartidos propios de EduTrack AI.
+- `components/layout/`: piezas estructurales como Sidebar, Header y Footer.
+- `components/ui/`: componentes visuales reutilizables y sin lógica de negocio.
+- `constants/`: constantes globales y tokens de configuración.
+- `hooks/`: hooks reutilizables.
+- `layouts/`: composiciones generales de páginas.
+- `pages/`: vistas completas de la aplicación.
+- `routes/`: definición y protección de rutas.
+- `services/`: comunicación con la API.
+- `types/`: tipos e interfaces compartidos.
+- `utils/`: funciones auxiliares.
 
-La estructura fue diseñada para facilitar el mantenimiento y la escalabilidad de la aplicación.
+## Convenciones
 
-- **assets/**: Recursos estáticos como imágenes, iconos y fuentes.
-- **components/common/**: Componentes reutilizables propios de la aplicación, como el Logo.
-- **components/layout/**: Componentes destinados a la estructura general de las páginas, como Navbar, Sidebar y Footer.
-- **components/ui/**: Componentes visuales reutilizables como Button, Card, Input y PasswordInput.
-- **constants/**: Constantes globales y configuraciones del proyecto.
-- **hooks/**: Hooks personalizados de React.
-- **layouts/**: Layouts reutilizables para las diferentes vistas.
-- **pages/**: Páginas principales de la aplicación.
-- **routes/**: Configuración de las rutas del proyecto.
-- **services/**: Comunicación con la API REST.
-- **types/**: Interfaces y tipos de TypeScript.
-- **utils/**: Funciones auxiliares reutilizables.
-
----
-
-## Responsive Design
-
-El Login fue desarrollado utilizando las utilidades de **Tailwind CSS**, permitiendo reutilizar los mismos componentes en dispositivos móviles, tablets y escritorio sin duplicar código.
-
----
+- Componentes React y sus archivos: `PascalCase`, por ejemplo `Button.tsx`.
+- Carpetas: minúsculas, por ejemplo `pages/login/`.
+- Hooks: prefijo `use`, por ejemplo `useAuth.ts`.
+- Servicios: sufijo `.service.ts`, por ejemplo `auth.service.ts`.
+- Tipos compartidos: sufijo `.types.ts`, por ejemplo `user.types.ts`.
+- Los componentes de `components/ui/` no deben contener lógica de negocio.
 
 ## Paleta de colores
 
-La interfaz utiliza una combinación de colores oscuros con tonos azules para transmitir una apariencia moderna y tecnológica.
+| Elemento | Código |
+|---|---|
+| Fondo principal | `#0F172A` |
+| Fondo de Card | `#1E293B` |
+| Bordes | `#334155` |
+| Botón principal | `#3B82F6` |
+| Hover principal | `#2563EB` |
+| Texto principal | `#FFFFFF` |
+| Texto secundario | `#94A3B8` |
+| Placeholder | `#64748B` |
 
-| Elemento | Color | Código |
-|----------|-------|--------|
-| Fondo principal | Azul oscuro | `#0F172A` |
-| Fondo del formulario (Card) | Gris azulado | `#1E293B` |
-| Bordes | Gris | `#334155` |
-| Botón principal | Azul | `#3B82F6` |
-| Hover del botón | Azul oscuro | `#2563EB` |
-| Texto principal | Blanco | `#FFFFFF` |
-| Texto secundario | Gris claro | `#94A3B8` |
-| Placeholder | Gris | `#64748B` |
+## Comandos
 
----
+```bash
+npm install
+npm run dev
+npm run build
+npm run lint
+```
 
-## Tecnologías utilizadas
+## Tecnologías
 
 - React
 - TypeScript
