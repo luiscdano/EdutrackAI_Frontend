@@ -1,7 +1,11 @@
-import { useState,useEffect,} from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import Button from "./components/ui/Button";
 import Card from "./components/ui/Card";
+import AcademicSetup from "./pages/academic/AcademicSetup";
 import DesignSystem from "./pages/design-system/DesignSystem";
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
@@ -21,10 +25,12 @@ function App() {
     window.location.pathname
       .toLowerCase()
       .replace(/\/+$/, "") || "/";
-      useEffect(() => {
+
+  useEffect(() => {
     if (
       currentUser &&
       currentPath !== "/" &&
+      currentPath !== "/academic-setup" &&
       currentPath !== "/design-system"
     ) {
       window.history.replaceState({}, "", "/");
@@ -57,6 +63,20 @@ function App() {
     setCurrentUser(null);
   };
 
+  const handleAcademicSetup = () => {
+    window.location.assign("/academic-setup");
+  };
+
+  if (currentPath === "/academic-setup") {
+    return (
+      <AcademicSetup
+        onContinueToDashboard={() =>
+          window.location.assign("/")
+        }
+      />
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-app-bg px-4 py-8">
       <Card
@@ -80,9 +100,17 @@ function App() {
         </p>
 
         <Button
-          variant="outline"
           fullWidth
           className="mt-6"
+          onClick={handleAcademicSetup}
+        >
+          Configurar perfil académico
+        </Button>
+
+        <Button
+          variant="outline"
+          fullWidth
+          className="mt-3"
           onClick={handleLogout}
         >
           Cerrar sesión
