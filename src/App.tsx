@@ -1,7 +1,7 @@
-import Dashboard from "./pages/Dashboard/Dashboard";
+import Activities from "./pages/Activities/Activities";
 
 const App = () => {
-  return <Dashboard />;
+  return <Activities />;
 };
 
 export default App;
