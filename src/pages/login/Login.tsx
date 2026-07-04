@@ -26,6 +26,9 @@ const initialCredentials: LoginCredentials = {
   password: "",
 };
 
+const emailPattern =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const getLoginErrorMessage = (
   error: unknown,
 ): string => {
@@ -33,11 +36,21 @@ const getLoginErrorMessage = (
     return "No se pudo iniciar sesión.";
   }
 
-  if (error.message === "Invalid credentials") {
-    return "Correo o contraseña incorrectos.";
-  }
+  const errorMessages: Record<string, string> = {
+    "Invalid credentials":
+      "Correo o contraseña incorrectos.",
+    "Validation error":
+      "Verifica que los datos introducidos sean válidos.",
+    "Failed to authenticate user":
+      "El servidor no pudo completar el inicio de sesión.",
+    "Internal server error":
+      "Ocurrió un error interno en el servidor.",
+  };
 
-  return error.message;
+  return (
+    errorMessages[error.message] ??
+    error.message
+  );
 };
 
 const Login = ({
@@ -73,13 +86,36 @@ const Login = ({
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
-
     setErrorMessage(null);
+
+    const email = credentials.email.trim();
+
+    if (!email) {
+      setErrorMessage(
+        "Introduce tu correo electrónico.",
+      );
+      return;
+    }
+
+    if (!emailPattern.test(email)) {
+      setErrorMessage(
+        "Introduce un correo electrónico válido.",
+      );
+      return;
+    }
+
+    if (!credentials.password) {
+      setErrorMessage(
+        "Introduce tu contraseña.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const authData = await loginUser({
-        email: credentials.email.trim(),
+        email,
         password: credentials.password,
       });
 
@@ -93,10 +129,14 @@ const Login = ({
     }
   };
 
+  const isFormComplete =
+    credentials.email.trim() !== "" &&
+    credentials.password !== "";
+
   return (
     <main className="flex min-h-screen w-full overflow-x-hidden bg-app-bg">
       {/* Panel izquierdo: solo escritorio */}
-      <section className="hidden min-h-screen min-w-0 w-1/2 items-center justify-center bg-slate-950 lg:flex">
+      <section className="hidden min-h-screen w-1/2 min-w-0 items-center justify-center bg-slate-950 lg:flex">
         <div className="w-full max-w-2xl px-10 text-center">
           <h1 className="text-5xl font-bold tracking-tight text-content">
             EduTrack{" "}
@@ -114,7 +154,7 @@ const Login = ({
       </section>
 
       {/* Panel derecho */}
-      <section className="flex min-h-screen min-w-0 w-full items-center justify-center px-4 py-8 sm:px-6 lg:w-1/2 lg:px-8">
+      <section className="flex min-h-screen w-full min-w-0 items-center justify-center px-4 py-8 sm:px-6 lg:w-1/2 lg:px-8">
         <div className="mx-auto w-full max-w-md">
           {/* Logo móvil */}
           <div className="mb-8 w-full text-center lg:hidden">
@@ -162,6 +202,7 @@ const Login = ({
                 />
 
                 <PasswordInput
+                  label="Contraseña"
                   name="password"
                   value={credentials.password}
                   onChange={handleChange}
@@ -185,26 +226,29 @@ const Login = ({
                 fullWidth
                 loading={isSubmitting}
                 disabled={
-                  !credentials.email.trim() ||
-                  !credentials.password
+                  !isFormComplete ||
+                  isSubmitting
                 }
               >
                 {isSubmitting
                   ? "Iniciando sesión"
                   : "Iniciar sesión"}
               </Button>
+
               <div className="mt-6 text-center text-sm text-muted">
-  ¿No tienes una cuenta?{" "}
-  <button
-    type="button"
-    onClick={() =>
-      window.location.assign("/register")
-    }
-    className="font-semibold text-primary transition-colors hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-  >
-    Crear cuenta
-  </button>
-</div>
+                ¿No tienes una cuenta?{" "}
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.location.assign(
+                      "/register",
+                    )
+                  }
+                  className="font-semibold text-primary transition-colors hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  Crear cuenta
+                </button>
+              </div>
             </form>
           </Card>
         </div>
@@ -213,4 +257,4 @@ const Login = ({
   );
 };
 
-export default Login;
+export default Login; 

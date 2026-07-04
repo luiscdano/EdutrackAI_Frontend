@@ -35,16 +35,14 @@ export interface ApiSuccessResponse<T> {
   data: T;
 }
 
+export interface ValidationErrorTree {
+  errors?: string[];
+  properties?: Record<string, ValidationErrorTree>;
+  items?: Array<ValidationErrorTree | null>;
+}
+
 export interface ApiErrorResponse {
   ok: false;
   message: string;
-}
-export interface RegisterData {
-  firstName: string;
-  lastName: string;
-  studentCode: string;
-  career: string;
-  email: string;
-  password: string;
-  avatarUrl?: string;
+  errors?: ValidationErrorTree;
 }
