@@ -1,7 +1,4 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useState } from "react";
 
 import AcademicWizard from "../../components/academic/AcademicWizard";
 import Button from "../../components/ui/Button";
@@ -33,12 +30,6 @@ const AcademicSetup = ({
   const [hasStarted, setHasStarted] = useState(
     Boolean(initialData),
   );
-
-  useEffect(() => {
-    if (initialData) {
-      setHasStarted(true);
-    }
-  }, [initialData]);
 
   const continueToDashboard = () => {
     if (onContinueToDashboard) {

@@ -1,7 +1,4 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useState } from "react";
 
 import Alert from "../ui/Alert";
 import Button from "../ui/Button";
@@ -51,6 +48,22 @@ const createInitialData = (
     weeklyGoal: initialData.weeklyGoal,
     difficulties: initialData.difficulties,
   };
+};
+
+const getInitialDataKey = (
+  initialData?: AcademicSettings | null,
+) => {
+  if (!initialData) {
+    return "empty";
+  }
+
+  return [
+    initialData.academicLevel,
+    initialData.learningStyle,
+    initialData.preferredSchedule,
+    initialData.weeklyGoal,
+    initialData.difficulties.join(","),
+  ].join("|");
 };
 
 const validateStep = (
@@ -153,7 +166,7 @@ const toAcademicSettings = (
   };
 };
 
-const AcademicWizard = ({
+const AcademicWizardContent = ({
   initialData,
   onSubmit,
   onContinueToDashboard,
@@ -172,14 +185,6 @@ const AcademicWizard = ({
     useState(false);
   const [isSubmitted, setIsSubmitted] =
     useState(false);
-
-  useEffect(() => {
-    setData(createInitialData(initialData));
-    setErrors({});
-    setSubmitError("");
-    setIsSubmitted(false);
-    setCurrentStep(1);
-  }, [initialData]);
 
   const handleChange = <Field extends AcademicSettingsField>(
     field: Field,
@@ -349,6 +354,21 @@ const AcademicWizard = ({
         )}
       </div>
     </Card>
+  );
+};
+
+const AcademicWizard = ({
+  initialData,
+  onSubmit,
+  onContinueToDashboard,
+}: AcademicWizardProps) => {
+  return (
+    <AcademicWizardContent
+      key={getInitialDataKey(initialData)}
+      initialData={initialData}
+      onSubmit={onSubmit}
+      onContinueToDashboard={onContinueToDashboard}
+    />
   );
 };
 
