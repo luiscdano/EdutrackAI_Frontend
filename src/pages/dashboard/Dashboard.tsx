@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
-import { getDashboardData } from "../../services/dashboard.service";
-import type { DashboardData } from "../../types/dashboard.types";
+import DashboardHeader from "../../components/dashboard/DashboardHeader";
+import PerformanceSection from "../../components/dashboard/PerformanceSection";
+import QuickActions from "../../components/dashboard/QuickActions";
+import StreakSection from "../../components/dashboard/StreakSection";
+import SummarySection from "../../components/dashboard/SummarySection";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Loader from "../../components/ui/Loader";
+import { useDashboardData } from "../../hooks/useDashboardData";
 
 interface Props {
   firstName: string;
@@ -9,31 +15,30 @@ interface Props {
   onLogout: () => void;
 }
 
-export default function Dashboard(props: Props) {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState("");
+const Dashboard = (props: Props) => {
+  const { data, loading, error, load } = useDashboardData();
 
-  useEffect(() => {
-    getDashboardData().then(setData).catch((e: unknown) => {
-      setError(e instanceof Error ? e.message : "Error al cargar");
-    });
-  }, []);
+  if (loading) {
+    return <main className="flex min-h-screen items-center justify-center bg-app-bg"><Loader size="lg" showLabel label="Cargando dashboard..." /></main>;
+  }
 
-  if (error) return <p>{error}</p>;
-  if (!data) return <p>Cargando dashboard...</p>;
+  if (error || !data) {
+    return <main className="flex min-h-screen items-center justify-center bg-app-bg px-4"><Card className="max-w-lg text-center"><h1 className="text-2xl font-bold text-content">No fue posible cargar el dashboard</h1><p className="mt-3 text-muted">{error}</p><Button className="mt-5" onClick={() => void load()}>Reintentar</Button></Card></main>;
+  }
 
   return (
-    <main className="min-h-screen bg-app-bg p-6 text-content">
-      <h1 className="text-3xl font-bold">Bienvenida, {props.firstName}</h1>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <article>Materias: {data.summary.enrolledSubjects}</article>
-        <article>Sesiones: {data.summary.studySessionsLast7Days}</article>
-        <article>Minutos: {data.summary.totalStudyMinutesLast7Days}</article>
-        <article>Productividad: {data.summary.averageProductivity}</article>
+    <main className="min-h-screen bg-app-bg px-4 py-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+        <DashboardHeader firstName={props.firstName} onOpenProfile={props.onOpenAcademicProfile} onLogout={props.onLogout} />
+        <SummarySection summary={data.summary} />
+        <section className="grid gap-6 lg:grid-cols-3">
+          <PerformanceSection items={data.performance} />
+          <StreakSection streak={data.streak} />
+        </section>
+        <QuickActions onOpenAcademicProfile={props.onOpenAcademicProfile} onOpenStudySessions={props.onOpenStudySessions} onRefresh={() => void load()} />
       </div>
-      <button onClick={props.onOpenStudySessions}>Registrar actividad</button>
-      <button onClick={props.onOpenAcademicProfile}>Perfil académico</button>
-      <button onClick={props.onLogout}>Cerrar sesión</button>
     </main>
   );
-}
+};
+
+export default Dashboard;
