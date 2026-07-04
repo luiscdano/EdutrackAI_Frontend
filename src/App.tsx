@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -9,10 +10,19 @@ import AcademicSetup from "./pages/academic/AcademicSetup";
 import DesignSystem from "./pages/design-system/DesignSystem";
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
+
+import {
+  createAcademicProfile,
+  getAcademicProfileByUser,
+  updateAcademicProfile,
+} from "./services/academic-profile.service";
+
 import {
   clearAuthSession,
   getAuthenticatedUser,
 } from "./services/auth.service";
+
+import type { AcademicSettings } from "./types/academic.types";
 import type { AuthenticatedUser } from "./types/auth.types";
 
 function App() {
@@ -26,6 +36,82 @@ function App() {
       .toLowerCase()
       .replace(/\/+$/, "") || "/";
 
+  const [
+    academicProfileId,
+    setAcademicProfileId,
+  ] = useState<string | null>(null);
+
+  const [
+    academicSettings,
+    setAcademicSettings,
+  ] = useState<AcademicSettings | null>(null);
+
+  const [
+    academicLoading,
+    setAcademicLoading,
+  ] = useState(
+    currentPath === "/academic-setup",
+  );
+
+  const [
+    academicError,
+    setAcademicError,
+  ] = useState<string | null>(null);
+
+  const loadAcademicProfile =
+    useCallback(async () => {
+      if (!currentUser) {
+        return;
+      }
+
+      try {
+        const profile =
+          await getAcademicProfileByUser(
+            currentUser.id,
+          );
+
+        if (!profile) {
+          setAcademicProfileId(null);
+          setAcademicSettings(null);
+          return;
+        }
+
+        setAcademicProfileId(profile.id);
+        setAcademicSettings(
+          profile.settings,
+        );
+      } catch (error) {
+        setAcademicError(
+          error instanceof Error
+            ? error.message
+            : "No fue posible cargar el perfil académico.",
+        );
+      } finally {
+        setAcademicLoading(false);
+      }
+    }, [currentUser]);
+
+  useEffect(() => {
+    if (
+      !currentUser ||
+      currentPath !== "/academic-setup"
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadAcademicProfile();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    currentPath,
+    currentUser,
+    loadAcademicProfile,
+  ]);
+
   useEffect(() => {
     if (
       currentUser &&
@@ -33,7 +119,11 @@ function App() {
       currentPath !== "/academic-setup" &&
       currentPath !== "/design-system"
     ) {
-      window.history.replaceState({}, "", "/");
+      window.history.replaceState(
+        {},
+        "",
+        "/",
+      );
     }
   }, [currentUser, currentPath]);
 
@@ -59,17 +149,58 @@ function App() {
 
   const handleLogout = () => {
     clearAuthSession();
-    window.history.replaceState({}, "", "/");
+
+    setAcademicProfileId(null);
+    setAcademicSettings(null);
+    setAcademicError(null);
+
+    window.history.replaceState(
+      {},
+      "",
+      "/",
+    );
+
     setCurrentUser(null);
   };
 
-  const handleAcademicSetup = () => {
-    window.location.assign("/academic-setup");
-  };
+  const handleSaveAcademicProfile =
+    async (
+      settings: AcademicSettings,
+    ) => {
+      const savedProfile =
+        academicProfileId
+          ? await updateAcademicProfile(
+              academicProfileId,
+              settings,
+            )
+          : await createAcademicProfile(
+              currentUser.id,
+              settings,
+            );
+
+      setAcademicProfileId(
+        savedProfile.id,
+      );
+
+      setAcademicSettings(
+        savedProfile.settings,
+      );
+    };
 
   if (currentPath === "/academic-setup") {
     return (
       <AcademicSetup
+        initialData={academicSettings}
+        loading={academicLoading}
+        error={academicError}
+        onRetry={() => {
+          setAcademicLoading(true);
+          setAcademicError(null);
+          void loadAcademicProfile();
+        }}
+        onSubmit={
+          handleSaveAcademicProfile
+        }
         onContinueToDashboard={() =>
           window.location.assign("/")
         }
@@ -102,7 +233,11 @@ function App() {
         <Button
           fullWidth
           className="mt-6"
-          onClick={handleAcademicSetup}
+          onClick={() =>
+            window.location.assign(
+              "/academic-setup",
+            )
+          }
         >
           Configurar perfil académico
         </Button>

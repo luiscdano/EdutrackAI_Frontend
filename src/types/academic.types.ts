@@ -57,3 +57,18 @@ export type AcademicWizardStep =
   | 4
   | 5
   | 6;
+export interface AcademicProfileApi {
+  id: string;
+  academicLevel: AcademicLevel;
+  learningStyle: LearningStyle;
+  preferredStudyTime: PreferredSchedule;
+  weeklyStudyGoalHours: number;
+  mainDifficulties: string;
+  createdAt: string;
+  updateAt: string;
+}
+
+export interface AcademicProfileResult {
+  id: string;
+  settings: AcademicSettings;
+}
