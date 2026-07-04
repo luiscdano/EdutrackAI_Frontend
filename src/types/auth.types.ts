@@ -24,6 +24,16 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterData {
+  firstName: string;
+  lastName: string;
+  studentCode: string;
+  career: string;
+  email: string;
+  password: string;
+  avatarUrl?: string;
+}
+
 export interface AuthData {
   user: AuthenticatedUser;
   token: string;
