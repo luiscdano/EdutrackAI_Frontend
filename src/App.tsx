@@ -7,6 +7,7 @@ import {
 import Button from "./components/ui/Button";
 import Card from "./components/ui/Card";
 import AcademicSetup from "./pages/academic/AcademicSetup";
+import Activities from "./pages/activities/Activities";
 import DesignSystem from "./pages/design-system/DesignSystem";
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
@@ -117,6 +118,7 @@ function App() {
       currentUser &&
       currentPath !== "/" &&
       currentPath !== "/academic-setup" &&
+      currentPath !== "/study-sessions" &&
       currentPath !== "/design-system"
     ) {
       window.history.replaceState(
@@ -208,6 +210,17 @@ function App() {
     );
   }
 
+  if (currentPath === "/study-sessions") {
+    return (
+      <Activities
+        userId={currentUser.id}
+        onBack={() =>
+          window.location.assign("/")
+        }
+      />
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-app-bg px-4 py-8">
       <Card
@@ -240,6 +253,19 @@ function App() {
           }
         >
           Configurar perfil académico
+        </Button>
+
+        <Button
+          variant="secondary"
+          fullWidth
+          className="mt-3"
+          onClick={() =>
+            window.location.assign(
+              "/study-sessions",
+            )
+          }
+        >
+          Actividades de estudio
         </Button>
 
         <Button
