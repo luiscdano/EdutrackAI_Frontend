@@ -1,7 +1,7 @@
-import Activities from "./pages/Activities/Activities";
+import Profile from "./pages/Profile/Profile";
 
-const App = () => {
-  return <Activities />;
-};
+function App() {
+  return <Profile />;
+}
 
 export default App;
