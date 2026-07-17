@@ -1,7 +1,7 @@
-import Profile from "./pages/Profile/Profile";
+import Resources from "./pages/Resources/Resources";
 
 function App() {
-  return <Profile />;
+  return <Resources />;
 }
 
 export default App;
