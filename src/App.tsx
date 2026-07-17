@@ -1,7 +1,7 @@
-import Profile from "./pages/Profile/Profile";
+import Subjects from "./pages/Subjects/Subjects";
 
 function App() {
-  return <Profile />;
+  return <Subjects />;
 }
 
 export default App;
