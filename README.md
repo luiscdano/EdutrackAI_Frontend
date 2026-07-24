@@ -1,74 +1,20 @@
 # EduTrack AI Frontend
 
-Interfaz web de EduTrack AI desarrollada con React, TypeScript, Tailwind CSS y Vite.
+Interfaz web de EduTrack AI desarrollada con React, TypeScript, Tailwind CSS y Vite, conectada al backend de `JRJ24/EdutrackAI_Backend`.
 
-## Arquitectura del proyecto
+## Requisitos
 
-```text
-src/
-├── assets/
-│   ├── fonts/
-│   ├── icons/
-│   └── images/
-├── components/
-│   ├── common/
-│   ├── layout/
-│   └── ui/
-│       ├── Button.tsx
-│       ├── Card.tsx
-│       ├── Input.tsx
-│       └── PasswordInput.tsx
-├── constants/
-├── hooks/
-├── layouts/
-├── pages/
-│   └── login/
-│       └── Login.tsx
-├── routes/
-├── services/
-├── types/
-├── utils/
-├── App.tsx
-├── index.css
-└── main.tsx
+- Node.js 20 o superior.
+- Backend ejecutándose en el puerto configurado.
+- Base de datos y migraciones del backend aplicadas.
+
+## Configuración
+
+Crea o revisa el archivo `.env`:
+
+```env
+VITE_API_URL=http://localhost:5000/api
 ```
-
-## Responsabilidades
-
-- `assets/`: imágenes, iconos y fuentes.
-- `components/common/`: componentes compartidos propios de EduTrack AI.
-- `components/layout/`: piezas estructurales como Sidebar, Header y Footer.
-- `components/ui/`: componentes visuales reutilizables y sin lógica de negocio.
-- `constants/`: constantes globales y tokens de configuración.
-- `hooks/`: hooks reutilizables.
-- `layouts/`: composiciones generales de páginas.
-- `pages/`: vistas completas de la aplicación.
-- `routes/`: definición y protección de rutas.
-- `services/`: comunicación con la API.
-- `types/`: tipos e interfaces compartidos.
-- `utils/`: funciones auxiliares.
-
-## Convenciones
-
-- Componentes React y sus archivos: `PascalCase`, por ejemplo `Button.tsx`.
-- Carpetas: minúsculas, por ejemplo `pages/login/`.
-- Hooks: prefijo `use`, por ejemplo `useAuth.ts`.
-- Servicios: sufijo `.service.ts`, por ejemplo `auth.service.ts`.
-- Tipos compartidos: sufijo `.types.ts`, por ejemplo `user.types.ts`.
-- Los componentes de `components/ui/` no deben contener lógica de negocio.
-
-## Paleta de colores
-
-| Elemento | Código |
-|---|---|
-| Fondo principal | `#0F172A` |
-| Fondo de Card | `#1E293B` |
-| Bordes | `#334155` |
-| Botón principal | `#3B82F6` |
-| Hover principal | `#2563EB` |
-| Texto principal | `#FFFFFF` |
-| Texto secundario | `#94A3B8` |
-| Placeholder | `#64748B` |
 
 ## Comandos
 
@@ -79,9 +25,39 @@ npm run build
 npm run lint
 ```
 
-## Tecnologías
+## Rutas principales
 
-- React
-- TypeScript
-- Tailwind CSS
-- Vite
+| Ruta | Módulo | Acceso |
+|---|---|---|
+| `/` | Dashboard académico | Autenticado |
+| `/subjects` | Materias | Autenticado |
+| `/progress` | Progreso y calificaciones | Autenticado |
+| `/study-sessions` | Hábitos y sesiones | Autenticado |
+| `/resources` | Biblioteca de recursos | Autenticado |
+| `/recommendations` | Sugerencias de estudio | Autenticado |
+| `/notifications` | Centro de notificaciones | Autenticado |
+| `/academic-setup` | Configuración académica | Autenticado |
+| `/profile` | Cuenta y contraseña | Autenticado |
+| `/admin` | Dashboard administrativo | Rol admin |
+| `/admin/academic-management` | Materias y resultados | Rol admin |
+
+## Arquitectura
+
+- `components/ui`: componentes visuales reutilizables.
+- `components/content`: estructura compartida de pantallas conectadas a la API.
+- `pages`: módulos completos de estudiante y administración.
+- `services`: autenticación y comunicación con endpoints.
+- `types`: contratos TypeScript compartidos.
+- `hooks`: carga y estado reutilizable del dashboard.
+
+## Manejo de sesión
+
+Las peticiones protegidas adjuntan el token almacenado. Una respuesta `401` invalida la sesión local. Los módulos muestran estados de carga, error, vacío y reintento.
+
+## Limitaciones conocidas
+
+- La aplicación mantiene navegación por `window.location` hasta completar el issue de React Router.
+- La edición general de la cuenta permanece bloqueada hasta que el backend ofrezca un endpoint seguro para actualizar el perfil propio.
+- GitHub Actions todavía no ejecuta build, lint o pruebas automáticamente.
+
+Consulta `docs/FRONTEND_DELIVERY.md` para el estado de entrega y la matriz de módulos.
