@@ -8,6 +8,7 @@ import Activities from "./pages/activities/Activities";
 import Dashboard from "./pages/dashboard/Dashboard";
 import DesignSystem from "./pages/design-system/DesignSystem";
 import Login from "./pages/login/Login";
+import Profile from "./pages/profile/Profile";
 import Register from "./pages/register/Register";
 import {
   clearAuthSession,
@@ -38,6 +39,15 @@ export default function App() {
     window.history.replaceState({}, "", "/");
     setUser(null);
   };
+
+  if (path === "/profile") {
+    return (
+      <Profile
+        initialUser={user}
+        onBack={() => window.location.assign("/")}
+      />
+    );
+  }
 
   if (path === "/admin/academic-management") {
     if (isAdmin) {
@@ -80,6 +90,9 @@ export default function App() {
   return (
     <Dashboard
       firstName={user.firstName}
+      onOpenAccount={() =>
+        window.location.assign("/profile")
+      }
       onOpenAcademicProfile={() =>
         window.location.assign("/academic-setup")
       }
