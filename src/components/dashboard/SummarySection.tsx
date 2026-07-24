@@ -1,4 +1,5 @@
-import Card from "../ui/Card";
+import StatsCard from "./StatsCard";
+
 import type { DashboardSummary } from "../../types/dashboard.types";
 
 interface Props {
@@ -7,24 +8,51 @@ interface Props {
 
 const SummarySection = ({ summary }: Props) => {
   const items = [
-    ["Materias inscritas", summary.enrolledSubjects],
-    ["Sesiones esta semana", summary.studySessionsLast7Days],
-    ["Minutos estudiados", summary.totalStudyMinutesLast7Days],
-    ["Productividad", `${summary.averageProductivity.toFixed(1)} / 5`],
-    ["Intentos de quizzes", summary.quizAttemptsLast7Days],
-    ["Promedio de quizzes", `${summary.averageQuizScore.toFixed(1)}%`],
-    ["Notificaciones", summary.unreadNotifications],
+    {
+      title: "Materias inscritas",
+      value: summary.enrolledSubjects,
+      subtitle: "Materias activas",
+    },
+    {
+      title: "Sesiones esta semana",
+      value: summary.studySessionsLast7Days,
+      subtitle: "Últimos 7 días",
+    },
+    {
+      title: "Minutos estudiados",
+      value: summary.totalStudyMinutesLast7Days,
+      subtitle: "Últimos 7 días",
+    },
+    {
+      title: "Productividad",
+      value: `${summary.averageProductivity.toFixed(1)} / 5`,
+      subtitle: "Promedio de sesiones",
+    },
+    {
+      title: "Intentos de quizzes",
+      value: summary.quizAttemptsLast7Days,
+      subtitle: "Últimos 7 días",
+    },
+    {
+      title: "Promedio de quizzes",
+      value: `${summary.averageQuizScore.toFixed(1)}%`,
+      subtitle: "Últimos 7 días",
+    },
+    {
+      title: "Notificaciones",
+      value: summary.unreadNotifications,
+      subtitle: "Sin leer",
+    },
   ];
 
   return (
     <section>
-      <h2 className="mb-4 text-xl font-bold text-content">Resumen académico</h2>
+      <h2 className="mb-4 text-xl font-bold text-content">
+        Resumen académico
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {items.map(([label, value]) => (
-          <Card key={String(label)} padding="md">
-            <p className="text-sm text-muted">{label}</p>
-            <p className="mt-2 text-3xl font-bold text-content">{value}</p>
-          </Card>
+        {items.map((item) => (
+          <StatsCard key={item.title} {...item} />
         ))}
       </div>
     </section>

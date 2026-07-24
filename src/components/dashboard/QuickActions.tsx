@@ -2,6 +2,7 @@ import Button from "../ui/Button";
 import Card from "../ui/Card";
 
 interface Props {
+  onOpenAccount: () => void;
   onOpenAcademicProfile: () => void;
   onOpenStudySessions: () => void;
   onOpenAdminAcademic?: () => void;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const QuickActions = ({
+  onOpenAccount,
   onOpenAcademicProfile,
   onOpenStudySessions,
   onOpenAdminAcademic,
@@ -18,7 +20,7 @@ const QuickActions = ({
     <h2 className="text-xl font-bold text-content">
       Accesos rápidos
     </h2>
-    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <Button fullWidth onClick={onOpenStudySessions}>
         Registrar actividad
       </Button>
@@ -28,6 +30,13 @@ const QuickActions = ({
         onClick={onOpenAcademicProfile}
       >
         Perfil académico
+      </Button>
+      <Button
+        fullWidth
+        variant="secondary"
+        onClick={onOpenAccount}
+      >
+        Mi cuenta
       </Button>
       {onOpenAdminAcademic && (
         <Button

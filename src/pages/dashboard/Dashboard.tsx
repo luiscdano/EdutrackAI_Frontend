@@ -10,6 +10,7 @@ import { useDashboardData } from "../../hooks/useDashboardData";
 
 interface Props {
   firstName: string;
+  onOpenAccount: () => void;
   onOpenAcademicProfile: () => void;
   onOpenStudySessions: () => void;
   onOpenAdminAcademic?: () => void;
@@ -61,6 +62,7 @@ const Dashboard = (props: Props) => {
           <StreakSection streak={data.streak} />
         </section>
         <QuickActions
+          onOpenAccount={props.onOpenAccount}
           onOpenAcademicProfile={props.onOpenAcademicProfile}
           onOpenStudySessions={props.onOpenStudySessions}
           onOpenAdminAcademic={props.onOpenAdminAcademic}
