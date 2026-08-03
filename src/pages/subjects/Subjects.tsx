@@ -50,7 +50,13 @@ const Subjects = ({ onBack }: Props) => {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
 
   const filtered = useMemo(() => subjects.filter((subject) => {
     const metadata = readMetadata(subject.description);

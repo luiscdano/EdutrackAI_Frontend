@@ -21,7 +21,14 @@ const Recommendations = ({ onBack, userId }: Props) => {
     catch (loadError) { setError(loadError instanceof Error ? loadError.message : "No fue posible cargar las recomendaciones."); }
     finally { setLoading(false); }
   }, [userId]);
-  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
 
   const priorities = useMemo(() => Array.from(new Set(items.map((item) => item.priority))).sort(), [items]);
   const statuses = useMemo(() => Array.from(new Set(items.map((item) => item.status))).sort(), [items]);

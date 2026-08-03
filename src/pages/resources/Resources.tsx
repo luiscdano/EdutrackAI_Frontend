@@ -23,7 +23,14 @@ const Resources = ({ onBack }: Props) => {
     catch (loadError) { setError(loadError instanceof Error ? loadError.message : "No fue posible cargar los recursos."); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
 
   const subjects = useMemo(() => Array.from(new Map(resources.map((resource) => [resource.subject.id, resource.subject])).values()), [resources]);
   const types = useMemo(() => Array.from(new Set(resources.map((resource) => resource.resourceType))).sort(), [resources]);
