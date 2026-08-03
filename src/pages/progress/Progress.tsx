@@ -30,7 +30,13 @@ const Progress = ({ onBack }: Props) => {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
 
   const subjects = useMemo(() => Array.from(new Map(grades.map((grade) => [grade.subject.id, grade.subject])).values()), [grades]);
   const filtered = useMemo(() => grades.filter((grade) => {
