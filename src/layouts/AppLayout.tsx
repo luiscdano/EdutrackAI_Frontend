@@ -102,9 +102,7 @@ const adminGroups: NavigationGroup[] = [
   },
   {
     label: "Personal",
-    items: [
-      { label: "Mi cuenta", to: "/profile", icon: "profile" },
-    ],
+    items: [{ label: "Mi cuenta", to: "/profile", icon: "profile" }],
   },
 ];
 
@@ -166,10 +164,6 @@ const AppLayout = () => {
   }, [theme]);
 
   useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobileOpen(false);
     };
@@ -185,12 +179,16 @@ const AppLayout = () => {
 
   const renderSidebar = (mobile = false) => {
     const compact = !mobile && collapsed;
+    const closeMobile = () => {
+      if (mobile) setMobileOpen(false);
+    };
 
     return (
       <div className="flex h-full flex-col bg-primary-hover text-white">
         <div className="flex min-h-[74px] items-center justify-between border-b border-white/10 px-4">
           <NavLink
             to={isAdmin ? "/admin" : "/"}
+            onClick={closeMobile}
             className={`flex min-w-0 items-center gap-3 ${compact ? "justify-center" : ""}`}
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-sm font-extrabold text-primary-hover shadow-sm">
@@ -231,6 +229,7 @@ const AppLayout = () => {
                     key={item.to}
                     to={item.to}
                     end={item.end}
+                    onClick={closeMobile}
                     className={({ isActive }) => [
                       "flex min-h-10 items-center gap-3 rounded-[10px] px-2.5 text-[13px] font-medium transition-colors",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
@@ -256,7 +255,11 @@ const AppLayout = () => {
             <p className="mt-1 text-xs font-semibold leading-relaxed text-white/85">
               Continúa una práctica corta y mantén tu progreso activo.
             </p>
-            <NavLink to="/practices" className="mt-3 inline-flex text-[11px] font-bold text-white underline-offset-4 hover:underline">
+            <NavLink
+              to="/practices"
+              onClick={closeMobile}
+              className="mt-3 inline-flex text-[11px] font-bold text-white underline-offset-4 hover:underline"
+            >
               Ver mi plan
             </NavLink>
           </div>
