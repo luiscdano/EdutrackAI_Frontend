@@ -17,6 +17,23 @@
   color-scheme: light;
 }
 
+html[data-theme="dark"] {
+  --et-page: #182126;
+  --et-paper: #202b30;
+  --et-soft: #29363c;
+  --et-line: #3a484e;
+  --et-ink: #edf3f1;
+  --et-muted: #a8b6b4;
+  --et-placeholder: #7f908f;
+  --et-primary: #9dbbc6;
+  --et-primary-hover: #b8cfd7;
+  --et-accent: #96b6aa;
+  --et-warning: #ddb77f;
+  --et-danger: #e39a93;
+  --et-shadow: 0 12px 32px rgb(0 0 0 / 20%);
+  color-scheme: dark;
+}
+
 @theme {
   --color-app-bg: var(--et-page);
   --color-surface: var(--et-paper);
@@ -38,17 +55,21 @@
 
 * { box-sizing: border-box; }
 html, body, #root { width: 100%; min-height: 100%; margin: 0; }
-html { scroll-behavior: smooth; background: #ffffff; }
+html {
+  scroll-behavior: smooth;
+  background: var(--et-page);
+}
 body {
   min-width: 320px;
   overflow-x: hidden;
-  background: #ffffff;
+  background: var(--et-page);
   color: var(--et-ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 button, input, select, textarea { font: inherit; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
@@ -56,10 +77,10 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 input::placeholder, textarea::placeholder { color: var(--et-placeholder); opacity: 1; }
 :focus-visible { outline: 2px solid var(--et-primary); outline-offset: 3px; }
-::selection { background: rgb(49 87 101 / 18%); color: var(--et-ink); }
+::selection { background: color-mix(in srgb, var(--et-primary) 20%, transparent); color: var(--et-ink); }
 
 .app-grid-background {
-  background: #ffffff;
+  background: var(--et-page);
 }
 
 .auth-identity-pattern {
@@ -98,12 +119,17 @@ input::placeholder, textarea::placeholder { color: var(--et-placeholder); opacit
 }
 .prototype-panel {
   border: 1px solid var(--et-line);
-  background: #ffffff;
+  background: var(--et-paper);
   border-radius: .875rem;
   box-shadow: var(--et-shadow);
 }
 .prototype-priority {
-  background: linear-gradient(135deg, #ffffff, rgb(49 87 101 / 4%), rgb(117 153 140 / 5%));
+  background: linear-gradient(
+    135deg,
+    var(--et-paper),
+    color-mix(in srgb, var(--et-primary) 7%, var(--et-paper)),
+    color-mix(in srgb, var(--et-accent) 8%, var(--et-paper))
+  );
 }
 .prototype-badge {
   display: inline-flex;
@@ -111,13 +137,19 @@ input::placeholder, textarea::placeholder { color: var(--et-placeholder); opacit
   align-items: center;
   border-radius: 999px;
   padding: .3rem .58rem;
-  background: rgb(49 87 101 / 9%);
+  background: color-mix(in srgb, var(--et-primary) 10%, transparent);
   color: var(--et-primary);
   font-size: .68rem;
   font-weight: 730;
 }
-.prototype-badge-attention { background: rgb(155 109 53 / 10%); color: var(--et-warning); }
-.prototype-scrollbar { scrollbar-color: rgb(111 124 128 / 28%) transparent; scrollbar-width: thin; }
+.prototype-badge-attention {
+  background: color-mix(in srgb, var(--et-warning) 12%, transparent);
+  color: var(--et-warning);
+}
+.prototype-scrollbar {
+  scrollbar-color: color-mix(in srgb, var(--et-muted) 35%, transparent) transparent;
+  scrollbar-width: thin;
+}
 
 @media (min-width: 1024px) {
   .login-shell {
