@@ -229,10 +229,10 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
         </div>
       </section>
 
-      <section className="login-right-panel flex min-h-dvh items-center justify-center overflow-y-auto bg-[#fffefa] px-5 py-6 sm:px-8 lg:px-12 xl:px-16">
+      <section className="login-right-panel flex min-h-dvh items-center justify-center overflow-y-auto bg-surface px-5 py-6 sm:px-8 lg:px-12 xl:px-16">
         <div className="login-right-content w-full max-w-[530px]">
           <div className="mb-7 flex items-center gap-3 lg:hidden">
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-white">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-surface">
               <GraduationIcon />
             </span>
             <span>
@@ -271,7 +271,11 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate className="login-form mt-5 space-y-3.5">
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="login-form mt-5 space-y-3.5"
+          >
             {errorMessage && (
               <Alert variant="danger" title="No se pudo iniciar sesión">
                 {errorMessage}
@@ -288,7 +292,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               autoComplete="email"
               disabled={isSubmitting}
               required
-              className="login-field min-h-[48px] bg-[#fffefa]"
+              className="login-field min-h-[48px] bg-surface"
             />
 
             <PasswordInput
@@ -299,7 +303,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               autoComplete="current-password"
               disabled={isSubmitting}
               required
-              className="login-field min-h-[48px] bg-[#fffefa]"
+              className="login-field min-h-[48px] bg-surface"
             />
 
             <label className="flex w-max cursor-pointer items-center gap-3 text-[13px] font-medium text-muted">
