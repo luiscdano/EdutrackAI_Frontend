@@ -69,10 +69,9 @@ const StudentDashboardRoute = () => {
 };
 
 const ProfileRoute = () => {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  if (!user) return null;
-  return <Profile initialUser={user} onBack={() => navigate(-1)} key={`${user.id}-${user.updateAt ?? user.createdAt}`} />;
+  return user ? <Profile initialUser={user} onBack={() => navigate(-1)} /> : null;
 };
 
 const SubjectsRoute = () => {
