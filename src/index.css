@@ -151,6 +151,15 @@ input::placeholder, textarea::placeholder { color: var(--et-placeholder); opacit
   scrollbar-width: thin;
 }
 
+html[data-theme="dark"] #main-content .bg-white,
+html[data-theme="dark"] .register-right-panel .bg-white {
+  background-color: var(--et-paper) !important;
+}
+
+html[data-theme="dark"] .register-right-panel {
+  background-color: var(--et-paper) !important;
+}
+
 @media (min-width: 1024px) {
   .login-shell {
     height: 100dvh;
