@@ -23,6 +23,11 @@ const initialCredentials: LoginCredentials = {
   password: "",
 };
 
+const demoCredentials: LoginCredentials = {
+  email: "prueba@gmail.com",
+  password: "123456789",
+};
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const getLoginErrorMessage = (error: unknown): string => {
@@ -123,26 +128,11 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
   };
 
   const handleDemoAccount = async () => {
-    const demoEmail = import.meta.env.VITE_DEMO_EMAIL as string | undefined;
-    const demoPassword = import.meta.env.VITE_DEMO_PASSWORD as
-      | string
-      | undefined;
-
-    if (!demoEmail || !demoPassword) {
-      setErrorMessage(
-        "La cuenta de demostración todavía no está configurada.",
-      );
-      return;
-    }
-
     setErrorMessage(null);
     setIsSubmitting(true);
 
     try {
-      const authData = await loginUser({
-        email: demoEmail,
-        password: demoPassword,
-      });
+      const authData = await loginUser(demoCredentials);
       onLoginSuccess(authData.user);
     } catch (error) {
       setErrorMessage(getLoginErrorMessage(error));
