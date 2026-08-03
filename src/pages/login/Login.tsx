@@ -162,9 +162,9 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
   ];
 
   return (
-    <main className="grid min-h-screen bg-surface lg:grid-cols-[48%_52%]">
-      <section className="auth-identity-pattern hidden min-h-screen flex-col justify-between px-11 py-11 text-white lg:flex xl:px-14 xl:py-12">
-        <div className="flex items-center gap-3">
+    <main className="login-shell grid min-h-dvh bg-surface lg:grid-cols-[48%_52%]">
+      <section className="auth-identity-pattern login-left-panel hidden min-h-dvh flex-col justify-between px-11 py-8 text-white lg:flex xl:px-14">
+        <div className="login-brand flex items-center gap-3">
           <span className="grid h-[52px] w-[52px] place-items-center rounded-[14px] bg-white text-[#315765] shadow-sm">
             <GraduationIcon />
           </span>
@@ -178,25 +178,25 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
           </span>
         </div>
 
-        <div className="max-w-[650px]">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-3 py-2 text-[12px] font-medium text-white/90">
+        <div className="login-left-content max-w-[650px]">
+          <span className="login-journey-badge inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-3 py-2 text-[12px] font-medium text-white/90">
             <JourneyIcon />
             Del progreso a una acción clara
           </span>
 
-          <h1 className="mt-7 max-w-[660px] text-[clamp(2.6rem,4.5vw,4rem)] font-extrabold leading-[1.05] tracking-[-0.045em]">
+          <h1 className="login-hero-title mt-6 max-w-[660px] text-[clamp(2.45rem,4.2vw,3.75rem)] font-extrabold leading-[1.05] tracking-[-0.045em]">
             No solo mires tus notas.
             <br />
             Entiende qué hacer después.
           </h1>
 
-          <p className="mt-5 max-w-[610px] text-[17px] leading-8 text-white/88">
+          <p className="login-hero-copy mt-4 max-w-[610px] text-[16px] leading-7 text-white/88">
             EduTrack reúne tus materias, resultados y hábitos de estudio para
             ayudarte a avanzar con una guía clara, realista y ajustable.
           </p>
 
-          <div className="mt-9 rounded-[18px] border border-white/20 bg-white/[0.055] p-5">
-            <div className="mb-4 flex items-center justify-between gap-3 text-[13px]">
+          <div className="login-journey mt-6 rounded-[18px] border border-white/20 bg-white/[0.055] p-4">
+            <div className="login-journey-heading mb-3 flex items-center justify-between gap-3 text-[13px]">
               <strong>Así funciona tu recorrido</strong>
               <span className="text-[11px] text-white/65">
                 Sin presión y a tu ritmo
@@ -207,7 +207,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               {journeySteps.map(([number, title, detail], index) => (
                 <div
                   key={number}
-                  className={`min-h-[126px] rounded-[13px] border border-white/15 p-3.5 ${
+                  className={`login-journey-card min-h-[108px] rounded-[13px] border border-white/15 p-3 ${
                     index === 0 ? "bg-white/14" : "bg-white/[0.065]"
                   }`}
                 >
@@ -220,8 +220,8 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                   >
                     {number}
                   </span>
-                  <strong className="mt-3 block text-[12px]">{title}</strong>
-                  <small className="mt-1.5 block text-[10px] leading-4 text-white/65">
+                  <strong className="mt-2.5 block text-[12px]">{title}</strong>
+                  <small className="mt-1 block text-[10px] leading-4 text-white/65">
                     {detail}
                   </small>
                 </div>
@@ -230,7 +230,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 text-[10px] text-white/65">
+        <div className="login-left-footer flex items-center justify-between gap-4 text-[10px] text-white/65">
           <span className="flex items-center gap-2">
             <i className="h-2.5 w-2.5 rounded-full bg-[#a8c6b9]" />
             Plataforma disponible
@@ -239,8 +239,8 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
         </div>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center bg-[#fffefa] px-5 py-8 sm:px-8 lg:px-12 xl:px-16">
-        <div className="w-full max-w-[530px]">
+      <section className="login-right-panel flex min-h-dvh items-center justify-center overflow-y-auto bg-[#fffefa] px-5 py-6 sm:px-8 lg:px-12 xl:px-16">
+        <div className="login-right-content w-full max-w-[530px]">
           <div className="mb-7 flex items-center gap-3 lg:hidden">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-white">
               <GraduationIcon />
@@ -253,10 +253,10 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-1 rounded-[14px] bg-surface-muted p-1.5">
+          <div className="login-tabs grid grid-cols-2 gap-1 rounded-[14px] bg-surface-muted p-1.5">
             <button
               type="button"
-              className="min-h-[48px] rounded-[11px] bg-surface px-4 text-sm font-bold text-content shadow-sm"
+              className="min-h-[46px] rounded-[11px] bg-surface px-4 text-sm font-bold text-content shadow-sm"
               aria-current="page"
             >
               Iniciar sesión
@@ -264,24 +264,24 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
             <button
               type="button"
               onClick={() => window.location.assign("/register")}
-              className="min-h-[48px] rounded-[11px] px-4 text-sm font-bold text-muted transition hover:bg-surface/70 hover:text-content"
+              className="min-h-[46px] rounded-[11px] px-4 text-sm font-bold text-muted transition hover:bg-surface/70 hover:text-content"
             >
               Crear perfil
             </button>
           </div>
 
-          <div className="mt-3">
+          <div className="login-heading-block mt-3">
             <span className="prototype-eyebrow">Bienvenida nuevamente</span>
-            <h2 className="mt-3 max-w-[480px] text-[clamp(2rem,3vw,2.65rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-content">
+            <h2 className="login-heading mt-2.5 max-w-[480px] text-[clamp(1.9rem,2.8vw,2.45rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-content">
               Continúa desde donde te quedaste.
             </h2>
-            <p className="mt-4 max-w-[510px] text-[15px] leading-7 text-muted">
+            <p className="login-description mt-3 max-w-[510px] text-[14px] leading-6 text-muted">
               Accede a tus materias, tu progreso y la actividad que tienes
               preparada para hoy.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="login-form mt-5 space-y-3.5">
             {errorMessage && (
               <Alert variant="danger" title="No se pudo iniciar sesión">
                 {errorMessage}
@@ -298,7 +298,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               autoComplete="email"
               disabled={isSubmitting}
               required
-              className="min-h-[52px] bg-[#fffefa]"
+              className="login-field min-h-[48px] bg-[#fffefa]"
             />
 
             <PasswordInput
@@ -309,7 +309,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               autoComplete="current-password"
               disabled={isSubmitting}
               required
-              className="min-h-[52px] bg-[#fffefa]"
+              className="login-field min-h-[48px] bg-[#fffefa]"
             />
 
             <label className="flex w-max cursor-pointer items-center gap-3 text-[13px] font-medium text-muted">
@@ -326,12 +326,12 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               size="lg"
               loading={isSubmitting}
               disabled={!isFormComplete || isSubmitting}
-              className="min-h-[52px] text-[15px]"
+              className="login-primary-button min-h-[48px] text-[15px]"
             >
               {isSubmitting ? "Iniciando sesión" : "Entrar a mi espacio"}
             </Button>
 
-            <div className="flex items-center gap-3 text-[11px] text-muted before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+            <div className="login-divider flex items-center gap-3 text-[11px] text-muted before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
               o continúa explorando
             </div>
 
@@ -341,13 +341,13 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               fullWidth
               onClick={() => void handleDemoAccount()}
               disabled={isSubmitting}
-              className="min-h-[50px] border-0 bg-surface-muted text-[14px] font-bold hover:bg-primary/10"
+              className="login-demo-button min-h-[46px] border-0 bg-surface-muted text-[14px] font-bold hover:bg-primary/10"
             >
               Ver una cuenta de demostración
             </Button>
           </form>
 
-          <div className="mt-5 grid grid-cols-[30px_1fr] gap-3 rounded-[14px] bg-success/15 px-4 py-4">
+          <div className="login-privacy mt-4 grid grid-cols-[30px_1fr] gap-3 rounded-[14px] bg-success/15 px-4 py-3">
             <span className="pt-0.5 text-lg text-success">✓</span>
             <div>
               <strong className="block text-[11px] text-success">
