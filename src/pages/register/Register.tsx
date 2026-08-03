@@ -6,9 +6,17 @@ import {
 
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
+import Checkbox from "../../components/ui/Checkbox";
 import Input from "../../components/ui/Input";
 import PasswordInput from "../../components/ui/PasswordInput";
+import Select from "../../components/ui/Select";
+import { createAcademicProfile } from "../../services/academic-profile.service";
 import { registerUser } from "../../services/auth.service";
+import type {
+  AcademicSettings,
+  AcademicSettingsFormData,
+  DifficultyOption,
+} from "../../types/academic.types";
 import type {
   AuthenticatedUser,
   RegisterData,
@@ -18,7 +26,9 @@ interface RegisterProps {
   onRegisterSuccess: (user: AuthenticatedUser) => void;
 }
 
-interface RegisterFormData extends RegisterData {
+interface RegisterFormData
+  extends RegisterData,
+    AcademicSettingsFormData {
   confirmPassword: string;
 }
 
@@ -30,7 +40,26 @@ const initialFormData: RegisterFormData = {
   email: "",
   password: "",
   confirmPassword: "",
+  academicLevel: "",
+  learningStyle: "",
+  preferredSchedule: "",
+  weeklyGoal: 5,
+  difficulties: [],
 };
+
+const difficultyOptions: Array<{
+  value: DifficultyOption;
+  label: string;
+}> = [
+  { value: "time_management", label: "Organización del tiempo" },
+  { value: "mathematics", label: "Matemáticas" },
+  { value: "reading_comprehension", label: "Comprensión lectora" },
+  { value: "programming", label: "Programación" },
+  { value: "concentration", label: "Concentración" },
+  { value: "teamwork", label: "Trabajo en equipo" },
+  { value: "communication", label: "Comunicación" },
+  { value: "exam_anxiety", label: "Ansiedad en evaluaciones" },
+];
 
 const getRegisterErrorMessage = (error: unknown): string => {
   if (!(error instanceof Error)) return "No se pudo completar el registro.";
@@ -43,11 +72,27 @@ const getRegisterErrorMessage = (error: unknown): string => {
 const Register = ({ onRegisterSuccess }: RegisterProps) => {
   const [formData, setFormData] = useState<RegisterFormData>(initialFormData);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [createdUser, setCreatedUser] = useState<AuthenticatedUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const fieldName = event.target.name as keyof RegisterFormData;
-    setFormData((current) => ({ ...current, [fieldName]: event.target.value }));
+    setFormData((current) => ({
+      ...current,
+      [fieldName]: event.target.value,
+    }));
+    if (errorMessage) setErrorMessage(null);
+  };
+
+  const toggleDifficulty = (difficulty: DifficultyOption) => {
+    setFormData((current) => ({
+      ...current,
+      difficulties: current.difficulties.includes(difficulty)
+        ? current.difficulties.filter((item) => item !== difficulty)
+        : [...current.difficulties, difficulty],
+    }));
     if (errorMessage) setErrorMessage(null);
   };
 
@@ -65,6 +110,21 @@ const Register = ({ onRegisterSuccess }: RegisterProps) => {
       return;
     }
 
+    if (
+      !formData.academicLevel ||
+      !formData.learningStyle ||
+      !formData.preferredSchedule ||
+      formData.weeklyGoal === ""
+    ) {
+      setErrorMessage("Completa toda la información académica.");
+      return;
+    }
+
+    if (formData.difficulties.length === 0) {
+      setErrorMessage("Selecciona al menos una dificultad o área que quieras mejorar.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -76,6 +136,25 @@ const Register = ({ onRegisterSuccess }: RegisterProps) => {
         email: formData.email.trim(),
         password: formData.password,
       });
+
+      const academicSettings: AcademicSettings = {
+        academicLevel: formData.academicLevel,
+        learningStyle: formData.learningStyle,
+        preferredSchedule: formData.preferredSchedule,
+        weeklyGoal: Number(formData.weeklyGoal),
+        difficulties: formData.difficulties,
+      };
+
+      try {
+        await createAcademicProfile(authData.user.id, academicSettings);
+      } catch {
+        setCreatedUser(authData.user);
+        setErrorMessage(
+          "Tu cuenta fue creada, pero no pudimos guardar el perfil académico. Puedes continuar y completarlo luego desde Perfil académico.",
+        );
+        return;
+      }
+
       onRegisterSuccess(authData.user);
     } catch (error) {
       setErrorMessage(getRegisterErrorMessage(error));
@@ -91,194 +170,268 @@ const Register = ({ onRegisterSuccess }: RegisterProps) => {
     formData.career.trim() !== "" &&
     formData.email.trim() !== "" &&
     formData.password !== "" &&
-    formData.confirmPassword !== "";
+    formData.confirmPassword !== "" &&
+    formData.academicLevel !== "" &&
+    formData.learningStyle !== "" &&
+    formData.preferredSchedule !== "" &&
+    formData.weeklyGoal !== "" &&
+    formData.difficulties.length > 0;
 
   return (
-    <main className="grid min-h-screen bg-surface lg:grid-cols-[minmax(330px,0.78fr)_minmax(600px,1.22fr)]">
-      <section className="auth-identity-pattern hidden min-h-screen flex-col justify-between p-9 text-white lg:flex xl:p-12">
-        <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-white text-sm font-extrabold text-[#315765]">ET</span>
-          <span>
-            <strong className="block text-base">EduTrack AI</strong>
-            <small className="block text-[10px] font-medium text-white/60">Aprendizaje con propósito</small>
-          </span>
-        </div>
-
-        <div className="max-w-lg">
-          <span className="inline-flex rounded-full border border-white/15 bg-white/[0.07] px-3 py-2 text-[11px] text-white/80">
-            Configura tu espacio en pocos minutos
-          </span>
-          <h1 className="mt-5 text-[clamp(2.1rem,3.7vw,3rem)] font-bold leading-[1.08] tracking-[-0.04em]">
-            Comienza con una experiencia adaptada a ti.
-          </h1>
-          <p className="mt-4 text-[15px] leading-7 text-white/72">
-            Tus datos académicos nos permiten organizar materias, prácticas, recursos y recomendaciones de forma más útil.
-          </p>
-
-          <div className="mt-8 space-y-3 rounded-2xl border border-white/15 bg-white/[0.075] p-4">
-            {[
-              ["1", "Crea tu cuenta", "Información personal y matrícula"],
-              ["2", "Completa tu perfil", "Carrera y contexto académico"],
-              ["3", "Recibe tu plan", "Prioridades y recursos sugeridos"],
-            ].map(([number, title, detail]) => (
-              <div key={number} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.055] p-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-[11px] font-bold text-[#315765]">{number}</span>
-                <span>
-                  <strong className="block text-xs">{title}</strong>
-                  <small className="mt-0.5 block text-[9px] text-white/50">{detail}</small>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="text-[10px] leading-5 text-white/50">
-          Tu información se utiliza únicamente para operar y personalizar EduTrack AI.
-        </p>
-      </section>
-
-      <section className="app-grid-background flex min-h-screen items-center justify-center px-4 py-8 sm:px-7 lg:px-10">
-        <div className="w-full max-w-3xl">
-          <div className="mb-7 flex items-center gap-3 lg:hidden">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-hover text-xs font-extrabold text-white">ET</span>
-            <span>
-              <strong className="block text-base text-content">EduTrack AI</strong>
-              <small className="block text-[10px] text-muted">Crea tu espacio académico</small>
-            </span>
-          </div>
-
-          <span className="prototype-eyebrow">Primer paso</span>
-          <div className="mt-2 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-            <div>
-              <h2 className="text-3xl font-bold tracking-[-0.03em] text-content">Crear cuenta</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">Completa tus datos personales y académicos.</p>
+    <main className="min-h-screen bg-white px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="mb-7 flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-sm font-extrabold text-white">
+                ET
+              </span>
+              <span>
+                <strong className="block text-base text-content">EduTrack AI</strong>
+                <small className="block text-[10px] text-muted">Aprendizaje con propósito</small>
+              </span>
             </div>
-            <span className="prototype-badge">Cuenta de estudiante</span>
+            <span className="prototype-eyebrow mt-7 inline-block">Registro completo</span>
+            <h1 className="mt-2 max-w-3xl text-3xl font-bold tracking-[-0.035em] text-content sm:text-4xl">
+              Crea tu cuenta y configura tu perfil académico de una vez.
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
+              Esta información permite organizar tus materias, prácticas, horarios y recomendaciones desde el primer ingreso.
+            </p>
           </div>
+          <span className="prototype-badge">Cuenta de estudiante</span>
+        </header>
 
-          <form onSubmit={handleSubmit} noValidate className="prototype-panel mt-6 p-5 sm:p-7">
-            <div className="space-y-5">
-              {errorMessage && (
-                <Alert variant="danger" title="No se pudo completar el registro">
-                  {errorMessage}
-                </Alert>
-              )}
+        <form onSubmit={handleSubmit} noValidate className="grid gap-5">
+          {errorMessage && (
+            <Alert
+              variant={createdUser ? "warning" : "danger"}
+              title={createdUser ? "Cuenta creada parcialmente" : "No se pudo completar el registro"}
+            >
+              {errorMessage}
+            </Alert>
+          )}
 
-              <div>
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-success">Información personal</p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Input
-                    label="Nombre"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="Escribe tu nombre"
-                    autoComplete="given-name"
-                    disabled={isSubmitting}
-                    required
-                  />
-                  <Input
-                    label="Apellido"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder="Escribe tu apellido"
-                    autoComplete="family-name"
-                    disabled={isSubmitting}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-5">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-success">Información académica</p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Input
-                    label="Matrícula"
-                    name="studentCode"
-                    value={formData.studentCode}
-                    onChange={handleChange}
-                    placeholder="Ejemplo: 20240196"
-                    disabled={isSubmitting}
-                    required
-                  />
-                  <Input
-                    label="Carrera"
-                    name="career"
-                    value={formData.career}
-                    onChange={handleChange}
-                    placeholder="Desarrollo de Software"
-                    disabled={isSubmitting}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-5">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-success">Acceso</p>
-                <div className="space-y-4">
-                  <Input
-                    label="Correo electrónico"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="correo@ejemplo.com"
-                    autoComplete="email"
-                    disabled={isSubmitting}
-                    required
-                  />
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <PasswordInput
-                      label="Contraseña"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      autoComplete="new-password"
-                      helperText="Debe tener al menos 8 caracteres."
-                      minLength={8}
-                      disabled={isSubmitting}
-                      required
-                    />
-                    <PasswordInput
-                      label="Confirmar contraseña"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      autoComplete="new-password"
-                      placeholder="Repite tu contraseña"
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
+          <section className="prototype-panel p-5 sm:p-7">
+            <div className="mb-5">
+              <span className="prototype-eyebrow">1. Información personal</span>
+              <h2 className="mt-1 text-xl font-bold text-content">Datos de tu cuenta</h2>
+              <p className="mt-1 text-sm text-muted">Información utilizada para identificarte e iniciar sesión.</p>
             </div>
 
-            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-muted">
-                ¿Ya tienes una cuenta?{" "}
-                <button
-                  type="button"
-                  onClick={() => window.location.assign("/login")}
-                  className="font-semibold text-primary hover:underline"
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Input
+                label="Nombre"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="Escribe tu nombre"
+                autoComplete="given-name"
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              />
+              <Input
+                label="Apellido"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Escribe tu apellido"
+                autoComplete="family-name"
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              />
+              <Input
+                label="Matrícula"
+                name="studentCode"
+                value={formData.studentCode}
+                onChange={handleChange}
+                placeholder="Ejemplo: 20240196"
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              />
+              <Input
+                label="Correo electrónico"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="correo@ejemplo.com"
+                autoComplete="email"
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+                containerClassName="md:col-span-2"
+              />
+              <Input
+                label="Carrera"
+                name="career"
+                value={formData.career}
+                onChange={handleChange}
+                placeholder="Desarrollo de Software"
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              />
+              <PasswordInput
+                label="Contraseña"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+                helperText="Debe tener al menos 8 caracteres."
+                minLength={8}
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              />
+              <PasswordInput
+                label="Confirmar contraseña"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                autoComplete="new-password"
+                placeholder="Repite tu contraseña"
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              />
+            </div>
+          </section>
+
+          <section className="prototype-panel p-5 sm:p-7">
+            <div className="mb-5">
+              <span className="prototype-eyebrow">2. Perfil académico</span>
+              <h2 className="mt-1 text-xl font-bold text-content">Cómo estudias actualmente</h2>
+              <p className="mt-1 text-sm text-muted">Estos datos se guardarán directamente en tu perfil académico.</p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Select
+                label="Nivel académico"
+                name="academicLevel"
+                value={formData.academicLevel}
+                onChange={handleChange}
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              >
+                <option value="">Selecciona una opción</option>
+                <option value="secondary">Secundaria</option>
+                <option value="technical">Técnico superior</option>
+                <option value="undergraduate">Grado universitario</option>
+                <option value="postgraduate">Postgrado</option>
+              </Select>
+
+              <Select
+                label="Estilo de aprendizaje"
+                name="learningStyle"
+                value={formData.learningStyle}
+                onChange={handleChange}
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              >
+                <option value="">Selecciona una opción</option>
+                <option value="visual">Visual</option>
+                <option value="auditory">Auditivo</option>
+                <option value="reading">Lectura y escritura</option>
+                <option value="kinesthetic">Práctico o kinestésico</option>
+              </Select>
+
+              <Select
+                label="Horario preferido"
+                name="preferredSchedule"
+                value={formData.preferredSchedule}
+                onChange={handleChange}
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              >
+                <option value="">Selecciona una opción</option>
+                <option value="morning">Mañana</option>
+                <option value="afternoon">Tarde</option>
+                <option value="night">Noche</option>
+                <option value="weekend">Fin de semana</option>
+                <option value="flexible">Horario flexible</option>
+              </Select>
+
+              <Input
+                label="Meta semanal de estudio"
+                name="weeklyGoal"
+                type="number"
+                min={1}
+                max={40}
+                value={formData.weeklyGoal}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setFormData((current) => ({
+                    ...current,
+                    weeklyGoal: value === "" ? "" : Number(value),
+                  }));
+                }}
+                helperText="Cantidad de horas por semana."
+                disabled={isSubmitting || Boolean(createdUser)}
+                required
+              />
+            </div>
+          </section>
+
+          <section className="prototype-panel p-5 sm:p-7">
+            <div className="mb-5">
+              <span className="prototype-eyebrow">3. Áreas a mejorar</span>
+              <h2 className="mt-1 text-xl font-bold text-content">¿Qué te resulta más difícil?</h2>
+              <p className="mt-1 text-sm text-muted">Selecciona una o varias opciones para orientar tus recomendaciones.</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {difficultyOptions.map((option) => (
+                <div
+                  key={option.value}
+                  className={`rounded-xl border p-3 transition ${
+                    formData.difficulties.includes(option.value)
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-white"
+                  }`}
                 >
-                  Iniciar sesión
-                </button>
-              </p>
+                  <Checkbox
+                    label={option.label}
+                    checked={formData.difficulties.includes(option.value)}
+                    onChange={() => toggleDifficulty(option.value)}
+                    disabled={isSubmitting || Boolean(createdUser)}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <footer className="flex flex-col gap-4 border-t border-border py-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted">
+              ¿Ya tienes una cuenta?{" "}
+              <button
+                type="button"
+                onClick={() => window.location.assign("/login")}
+                className="font-semibold text-primary hover:underline"
+              >
+                Iniciar sesión
+              </button>
+            </p>
+
+            {createdUser ? (
+              <Button
+                type="button"
+                size="lg"
+                onClick={() => onRegisterSuccess(createdUser)}
+                className="sm:min-w-64"
+              >
+                Continuar a mi cuenta
+              </Button>
+            ) : (
               <Button
                 type="submit"
                 size="lg"
                 loading={isSubmitting}
                 disabled={!isFormComplete}
-                className="sm:min-w-48"
+                className="sm:min-w-64"
               >
-                {isSubmitting ? "Creando cuenta" : "Crear cuenta"}
+                {isSubmitting ? "Creando cuenta" : "Crear cuenta y guardar perfil"}
               </Button>
-            </div>
-          </form>
-        </div>
-      </section>
+            )}
+          </footer>
+        </form>
+      </div>
     </main>
   );
 };
