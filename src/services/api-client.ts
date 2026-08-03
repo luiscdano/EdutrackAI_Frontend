@@ -73,9 +73,7 @@ export const apiRequest = async <T>(
   return payload.data as T;
 };
 
-export const buildQuery = (
-  values: Record<string, string | number | boolean | undefined | null>,
-) => {
+export const buildQuery = (values: object) => {
   const params = new URLSearchParams();
 
   Object.entries(values).forEach(([key, value]) => {
