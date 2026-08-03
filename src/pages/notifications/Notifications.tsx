@@ -22,7 +22,14 @@ const Notifications = ({ onBack, userId }: Props) => {
     catch (loadError) { setError(loadError instanceof Error ? loadError.message : "No fue posible cargar las notificaciones."); }
     finally { setLoading(false); }
   }, [userId]);
-  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
 
   const filtered = useMemo(() => items.filter((item) => filter === "all" || (filter === "read" ? item.isRead : !item.isRead)), [filter, items]);
   const unread = items.filter((item) => !item.isRead).length;
