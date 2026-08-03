@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --et-page: #f2f4f0;
-  --et-paper: #fffefa;
-  --et-soft: #f7f9f6;
-  --et-line: #d9e0da;
+  --et-page: #ffffff;
+  --et-paper: #ffffff;
+  --et-soft: #f5f7f5;
+  --et-line: #dce3de;
   --et-ink: #25343a;
   --et-muted: #6f7c80;
   --et-placeholder: #93a09f;
@@ -13,25 +13,8 @@
   --et-accent: #75998c;
   --et-warning: #9b6d35;
   --et-danger: #a95d57;
-  --et-shadow: 0 12px 32px rgb(37 52 58 / 5.5%);
+  --et-shadow: 0 8px 24px rgb(37 52 58 / 5%);
   color-scheme: light;
-}
-
-html[data-theme="dark"] {
-  --et-page: #182126;
-  --et-paper: #202b30;
-  --et-soft: #27343a;
-  --et-line: #39474d;
-  --et-ink: #edf3f1;
-  --et-muted: #a8b6b4;
-  --et-placeholder: #7f908f;
-  --et-primary: #9dbbc6;
-  --et-primary-hover: #b8cfd7;
-  --et-accent: #96b6aa;
-  --et-warning: #ddb77f;
-  --et-danger: #e39a93;
-  --et-shadow: 0 12px 32px rgb(0 0 0 / 18%);
-  color-scheme: dark;
 }
 
 @theme {
@@ -55,11 +38,11 @@ html[data-theme="dark"] {
 
 * { box-sizing: border-box; }
 html, body, #root { width: 100%; min-height: 100%; margin: 0; }
-html { scroll-behavior: smooth; background: var(--et-page); }
+html { scroll-behavior: smooth; background: #ffffff; }
 body {
   min-width: 320px;
   overflow-x: hidden;
-  background: var(--et-page);
+  background: #ffffff;
   color: var(--et-ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
@@ -73,11 +56,10 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 input::placeholder, textarea::placeholder { color: var(--et-placeholder); opacity: 1; }
 :focus-visible { outline: 2px solid var(--et-primary); outline-offset: 3px; }
-::selection { background: rgb(49 87 101 / 22%); color: var(--et-ink); }
+::selection { background: rgb(49 87 101 / 18%); color: var(--et-ink); }
 
 .app-grid-background {
-  background-color: var(--et-page);
-  background-image: radial-gradient(circle at 8% 5%, rgb(49 87 101 / 8%) 0, transparent 25rem), radial-gradient(circle at 88% 95%, rgb(117 153 140 / 10%) 0, transparent 28rem);
+  background: #ffffff;
 }
 
 .auth-identity-pattern {
@@ -116,12 +98,12 @@ input::placeholder, textarea::placeholder { color: var(--et-placeholder); opacit
 }
 .prototype-panel {
   border: 1px solid var(--et-line);
-  background: var(--et-paper);
+  background: #ffffff;
   border-radius: .875rem;
   box-shadow: var(--et-shadow);
 }
 .prototype-priority {
-  background: linear-gradient(135deg, var(--et-paper), rgb(49 87 101 / 7%), rgb(117 153 140 / 8%));
+  background: linear-gradient(135deg, #ffffff, rgb(49 87 101 / 4%), rgb(117 153 140 / 5%));
 }
 .prototype-badge {
   display: inline-flex;
@@ -129,13 +111,13 @@ input::placeholder, textarea::placeholder { color: var(--et-placeholder); opacit
   align-items: center;
   border-radius: 999px;
   padding: .3rem .58rem;
-  background: rgb(49 87 101 / 10%);
+  background: rgb(49 87 101 / 9%);
   color: var(--et-primary);
   font-size: .68rem;
   font-weight: 730;
 }
-.prototype-badge-attention { background: rgb(155 109 53 / 12%); color: var(--et-warning); }
-.prototype-scrollbar { scrollbar-color: rgb(111 124 128 / 35%) transparent; scrollbar-width: thin; }
+.prototype-badge-attention { background: rgb(155 109 53 / 10%); color: var(--et-warning); }
+.prototype-scrollbar { scrollbar-color: rgb(111 124 128 / 28%) transparent; scrollbar-width: thin; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
