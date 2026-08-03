@@ -31,17 +31,53 @@ const getLoginErrorMessage = (error: unknown): string => {
   const errorMessages: Record<string, string> = {
     "Invalid credentials": "Correo o contraseña incorrectos.",
     "Validation error": "Verifica que los datos introducidos sean válidos.",
-    "Failed to authenticate user": "El servidor no pudo completar el inicio de sesión.",
+    "Failed to authenticate user":
+      "El servidor no pudo completar el inicio de sesión.",
     "Internal server error": "Ocurrió un error interno en el servidor.",
   };
 
   return errorMessages[error.message] ?? error.message;
 };
 
+const GraduationIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m3 8 9-4 9 4-9 4-9-4Z" />
+    <path d="M7 10.2V15c0 1.7 2.2 3 5 3s5-1.3 5-3v-4.8" />
+    <path d="M21 8v5" />
+  </svg>
+);
+
+const JourneyIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className="h-4 w-4"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="6" cy="6" r="2" />
+    <circle cx="18" cy="18" r="2" />
+    <path d="M8 7.2c4 1.1 4.2 4.8 8 5.7" />
+    <path d="m14 11 2 2-2 2" />
+  </svg>
+);
+
 const Login = ({ onLoginSuccess }: LoginProps) => {
-  const [credentials, setCredentials] = useState<LoginCredentials>(initialCredentials);
+  const [credentials, setCredentials] =
+    useState<LoginCredentials>(initialCredentials);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [recoveryNotice, setRecoveryNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +89,6 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
-    setRecoveryNotice(false);
 
     const email = credentials.email.trim();
 
@@ -75,7 +110,39 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
     setIsSubmitting(true);
 
     try {
-      const authData = await loginUser({ email, password: credentials.password });
+      const authData = await loginUser({
+        email,
+        password: credentials.password,
+      });
+      onLoginSuccess(authData.user);
+    } catch (error) {
+      setErrorMessage(getLoginErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDemoAccount = async () => {
+    const demoEmail = import.meta.env.VITE_DEMO_EMAIL as string | undefined;
+    const demoPassword = import.meta.env.VITE_DEMO_PASSWORD as
+      | string
+      | undefined;
+
+    if (!demoEmail || !demoPassword) {
+      setErrorMessage(
+        "La cuenta de demostración todavía no está configurada.",
+      );
+      return;
+    }
+
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      const authData = await loginUser({
+        email: demoEmail,
+        password: demoPassword,
+      });
       onLoginSuccess(authData.user);
     } catch (error) {
       setErrorMessage(getLoginErrorMessage(error));
@@ -87,86 +154,138 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
   const isFormComplete =
     credentials.email.trim() !== "" && credentials.password !== "";
 
+  const journeySteps = [
+    ["1", "Entender", "Revisa cómo vas"],
+    ["2", "Organizar", "Prepara tu semana"],
+    ["3", "Estudiar", "Sigue una actividad"],
+    ["4", "Mejorar", "Ajusta el plan"],
+  ];
+
   return (
-    <main className="grid min-h-screen bg-surface lg:grid-cols-[minmax(380px,0.96fr)_minmax(410px,1.04fr)]">
-      <section className="auth-identity-pattern hidden min-h-screen flex-col justify-between p-9 text-white lg:flex xl:p-12">
+    <main className="grid min-h-screen bg-surface lg:grid-cols-[48%_52%]">
+      <section className="auth-identity-pattern hidden min-h-screen flex-col justify-between px-11 py-11 text-white lg:flex xl:px-14 xl:py-12">
         <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-white text-sm font-extrabold text-[#315765]">ET</span>
+          <span className="grid h-[52px] w-[52px] place-items-center rounded-[14px] bg-white text-[#315765] shadow-sm">
+            <GraduationIcon />
+          </span>
           <span>
-            <strong className="block text-base">EduTrack AI</strong>
-            <small className="block text-[10px] font-medium text-white/60">Aprendizaje con propósito</small>
+            <strong className="block text-[18px] font-extrabold leading-tight">
+              EduTrack
+            </strong>
+            <small className="mt-1 block text-[11px] font-semibold text-white/70">
+              Tu guía académica personal
+            </small>
           </span>
         </div>
 
-        <div className="max-w-xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-2 text-[11px] text-white/80">
-            <span className="h-2 w-2 rounded-full bg-[#a8c6b9]" />
-            Tu espacio académico personalizado
+        <div className="max-w-[650px]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-3 py-2 text-[12px] font-medium text-white/90">
+            <JourneyIcon />
+            Del progreso a una acción clara
           </span>
-          <h1 className="mt-5 max-w-lg text-[clamp(2.15rem,4vw,3.15rem)] font-bold leading-[1.08] tracking-[-0.045em]">
-            Aprende con claridad, avanza con calma.
+
+          <h1 className="mt-7 max-w-[660px] text-[clamp(2.6rem,4.5vw,4rem)] font-extrabold leading-[1.05] tracking-[-0.045em]">
+            No solo mires tus notas.
+            <br />
+            Entiende qué hacer después.
           </h1>
-          <p className="mt-4 max-w-lg text-[15px] leading-7 text-white/72">
-            Organiza tus materias, identifica prioridades y convierte cada sesión de estudio en un paso concreto hacia tus objetivos.
+
+          <p className="mt-5 max-w-[610px] text-[17px] leading-8 text-white/88">
+            EduTrack reúne tus materias, resultados y hábitos de estudio para
+            ayudarte a avanzar con una guía clara, realista y ajustable.
           </p>
 
-          <div className="mt-8 rounded-2xl border border-white/15 bg-white/[0.075] p-4">
-            <div className="mb-3 flex items-center justify-between text-xs">
-              <strong>Tu recorrido en EduTrack</strong>
-              <span className="text-[10px] text-white/55">Simple y guiado</span>
+          <div className="mt-9 rounded-[18px] border border-white/20 bg-white/[0.055] p-5">
+            <div className="mb-4 flex items-center justify-between gap-3 text-[13px]">
+              <strong>Así funciona tu recorrido</strong>
+              <span className="text-[11px] text-white/65">
+                Sin presión y a tu ritmo
+              </span>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                ["1", "Conoce", "Tu situación"],
-                ["2", "Prioriza", "Lo importante"],
-                ["3", "Practica", "Con enfoque"],
-                ["4", "Mejora", "Con evidencia"],
-              ].map(([number, title, detail], index) => (
-                <div key={number} className={`min-h-28 rounded-xl border border-white/10 p-3 ${index === 0 ? "bg-white/15" : "bg-white/[0.055]"}`}>
-                  <span className={`grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold ${index === 0 ? "bg-white text-[#315765]" : "bg-white/10"}`}>
+
+            <div className="grid grid-cols-4 gap-2.5">
+              {journeySteps.map(([number, title, detail], index) => (
+                <div
+                  key={number}
+                  className={`min-h-[126px] rounded-[13px] border border-white/15 p-3.5 ${
+                    index === 0 ? "bg-white/14" : "bg-white/[0.065]"
+                  }`}
+                >
+                  <span
+                    className={`grid h-8 w-8 place-items-center rounded-full text-xs font-extrabold ${
+                      index === 0
+                        ? "bg-white text-[#315765]"
+                        : "bg-white/12 text-white"
+                    }`}
+                  >
                     {number}
                   </span>
-                  <strong className="mt-2.5 block text-[11px]">{title}</strong>
-                  <small className="mt-1 block text-[9px] text-white/50">{detail}</small>
+                  <strong className="mt-3 block text-[12px]">{title}</strong>
+                  <small className="mt-1.5 block text-[10px] leading-4 text-white/65">
+                    {detail}
+                  </small>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-[10px] text-white/50">
-          <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-[#a8c6b9]" /> Plataforma disponible</span>
-          <span>Tu información académica permanece protegida</span>
+        <div className="flex items-center justify-between gap-4 text-[10px] text-white/65">
+          <span className="flex items-center gap-2">
+            <i className="h-2.5 w-2.5 rounded-full bg-[#a8c6b9]" />
+            Plataforma disponible
+          </span>
+          <span>Aprendizaje organizado a tu ritmo</span>
         </div>
       </section>
 
-      <section className="app-grid-background grid min-h-screen place-items-center px-4 py-8 sm:px-7 lg:px-10">
-        <div className="w-full max-w-[440px]">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-hover text-xs font-extrabold text-white">ET</span>
+      <section className="flex min-h-screen items-center justify-center bg-[#fffefa] px-5 py-8 sm:px-8 lg:px-12 xl:px-16">
+        <div className="w-full max-w-[530px]">
+          <div className="mb-7 flex items-center gap-3 lg:hidden">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-white">
+              <GraduationIcon />
+            </span>
             <span>
-              <strong className="block text-base text-content">EduTrack AI</strong>
-              <small className="block text-[10px] text-muted">Aprendizaje con propósito</small>
+              <strong className="block text-base text-content">EduTrack</strong>
+              <small className="text-[10px] text-muted">
+                Tu guía académica personal
+              </small>
             </span>
           </div>
 
-          <span className="prototype-eyebrow">Bienvenida de nuevo</span>
-          <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-content">Inicia sesión</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Continúa desde donde lo dejaste y revisa tu siguiente paso académico.
-          </p>
+          <div className="grid grid-cols-2 gap-1 rounded-[14px] bg-surface-muted p-1.5">
+            <button
+              type="button"
+              className="min-h-[48px] rounded-[11px] bg-surface px-4 text-sm font-bold text-content shadow-sm"
+              aria-current="page"
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              onClick={() => window.location.assign("/register")}
+              className="min-h-[48px] rounded-[11px] px-4 text-sm font-bold text-muted transition hover:bg-surface/70 hover:text-content"
+            >
+              Crear perfil
+            </button>
+          </div>
 
-          <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-4">
+          <div className="mt-3">
+            <span className="prototype-eyebrow">Bienvenida nuevamente</span>
+            <h2 className="mt-3 max-w-[480px] text-[clamp(2rem,3vw,2.65rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-content">
+              Continúa desde donde te quedaste.
+            </h2>
+            <p className="mt-4 max-w-[510px] text-[15px] leading-7 text-muted">
+              Accede a tus materias, tu progreso y la actividad que tienes
+              preparada para hoy.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-5">
             {errorMessage && (
               <Alert variant="danger" title="No se pudo iniciar sesión">
                 {errorMessage}
               </Alert>
-            )}
-
-            {recoveryNotice && (
-              <div role="status" className="rounded-xl border border-border bg-surface-muted p-3 text-xs leading-5 text-muted">
-                La recuperación por correo todavía no está disponible. Por ahora, solicita a un administrador que restablezca tu acceso.
-              </div>
             )}
 
             <Input
@@ -179,6 +298,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               autoComplete="email"
               disabled={isSubmitting}
               required
+              className="min-h-[52px] bg-[#fffefa]"
             />
 
             <PasswordInput
@@ -189,21 +309,16 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               autoComplete="current-password"
               disabled={isSubmitting}
               required
+              className="min-h-[52px] bg-[#fffefa]"
             />
 
-            <div className="flex items-center justify-between gap-3 text-xs text-muted">
-              <label className="flex items-center gap-2 font-medium">
-                <input type="checkbox" className="h-4 w-4 rounded border-border accent-primary" />
-                Recordarme
-              </label>
-              <button
-                type="button"
-                onClick={() => setRecoveryNotice(true)}
-                className="font-semibold text-primary hover:underline"
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
-            </div>
+            <label className="flex w-max cursor-pointer items-center gap-3 text-[13px] font-medium text-muted">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-border accent-primary"
+              />
+              Mantener mi sesión
+            </label>
 
             <Button
               type="submit"
@@ -211,27 +326,37 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
               size="lg"
               loading={isSubmitting}
               disabled={!isFormComplete || isSubmitting}
+              className="min-h-[52px] text-[15px]"
             >
-              {isSubmitting ? "Iniciando sesión" : "Iniciar sesión"}
+              {isSubmitting ? "Iniciando sesión" : "Entrar a mi espacio"}
             </Button>
 
-            <div className="flex items-center gap-3 py-1 text-[10px] text-muted before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-              o comienza ahora
+            <div className="flex items-center gap-3 text-[11px] text-muted before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+              o continúa explorando
             </div>
 
             <Button
               type="button"
               variant="secondary"
               fullWidth
-              onClick={() => window.location.assign("/register")}
+              onClick={() => void handleDemoAccount()}
+              disabled={isSubmitting}
+              className="min-h-[50px] border-0 bg-surface-muted text-[14px] font-bold hover:bg-primary/10"
             >
-              Crear una cuenta de estudiante
+              Ver una cuenta de demostración
             </Button>
           </form>
 
-          <div className="mt-6 grid grid-cols-[30px_1fr] gap-2.5 rounded-xl bg-success/10 p-3 text-[10px] leading-5 text-muted">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-success/15 text-success">✓</span>
-            <p>Usamos tu información únicamente para personalizar la experiencia académica y proteger tu cuenta.</p>
+          <div className="mt-5 grid grid-cols-[30px_1fr] gap-3 rounded-[14px] bg-success/15 px-4 py-4">
+            <span className="pt-0.5 text-lg text-success">✓</span>
+            <div>
+              <strong className="block text-[11px] text-success">
+                Tu información académica permanece privada.
+              </strong>
+              <p className="mt-0.5 text-[10px] leading-4 text-muted">
+                Solo se utiliza para organizar tu experiencia de estudio.
+              </p>
+            </div>
           </div>
         </div>
       </section>
