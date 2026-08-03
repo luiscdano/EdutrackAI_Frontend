@@ -21,7 +21,14 @@ const AdminDashboard = ({ onBack }: Props) => {
     catch (loadError) { setError(loadError instanceof Error ? loadError.message : "No fue posible cargar el dashboard administrativo."); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
 
   const metrics = useMemo(() => stats ? [
     { title: "Usuarios", value: stats.users.total, subtitle: `${stats.users.active} activos` },
