@@ -15,13 +15,21 @@ type IconName =
   | "profile"
   | "users"
   | "settings"
-  | "audit";
+  | "audit"
+  | "logout";
+
+type Theme = "light" | "dark";
 
 interface NavigationItem {
   label: string;
   to: string;
   icon: IconName;
   end?: boolean;
+}
+
+interface NavigationGroup {
+  label: string;
+  items: NavigationItem[];
 }
 
 const Icon = ({ name }: { name: IconName }) => {
@@ -38,60 +46,102 @@ const Icon = ({ name }: { name: IconName }) => {
     users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87m-2-12a4 4 0 0 1 0 7.75",
     settings: "M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0-13 1 2.2 2.4.5 1.8-1.6 2.2 2.2-1.6 1.8.5 2.4 2.2 1-1 3 1 2.2-2.2 2.2-1.8-1.6-2.4.5-1 2.2h-3l-1-2.2-2.4-.5-1.8 1.6-2.2-2.2 1.6-1.8-.5-2.4-2.2-1 1-3-1-2.2 2.2-2.2 1.8 1.6 2.4-.5 1-2.2h3Z",
     audit: "M9 4h6m-7 4h8m-8 4h5m-7-9h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z",
+    logout: "M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5m4-3 4-4-4-4m4 4H9",
   };
 
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-[18px] w-[18px] shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d={paths[name]} />
     </svg>
   );
 };
 
-const studentNavigation: NavigationItem[] = [
-  { label: "Dashboard", to: "/", icon: "home", end: true },
-  { label: "Materias", to: "/subjects", icon: "book" },
-  { label: "Progreso", to: "/progress", icon: "chart" },
-  { label: "Sesiones de estudio", to: "/study-sessions", icon: "clock" },
-  { label: "Prácticas y quizzes", to: "/practices", icon: "quiz" },
-  { label: "Recursos", to: "/resources", icon: "resource" },
-  { label: "Recomendaciones", to: "/recommendations", icon: "idea" },
-  { label: "Notificaciones", to: "/notifications", icon: "bell" },
-  { label: "Perfil académico", to: "/academic-setup", icon: "settings" },
-  { label: "Mi cuenta", to: "/profile", icon: "profile" },
+const studentGroups: NavigationGroup[] = [
+  {
+    label: "Aprendizaje",
+    items: [
+      { label: "Inicio", to: "/", icon: "home", end: true },
+      { label: "Mi plan", to: "/practices", icon: "quiz" },
+      { label: "Materias", to: "/subjects", icon: "book" },
+      { label: "Biblioteca", to: "/resources", icon: "resource" },
+      { label: "Progreso", to: "/progress", icon: "chart" },
+      { label: "Recomendaciones", to: "/recommendations", icon: "idea" },
+      { label: "Sesión de estudio", to: "/study-sessions", icon: "clock" },
+    ],
+  },
+  {
+    label: "Personal",
+    items: [
+      { label: "Notificaciones", to: "/notifications", icon: "bell" },
+      { label: "Perfil académico", to: "/academic-setup", icon: "settings" },
+      { label: "Mi cuenta", to: "/profile", icon: "profile" },
+    ],
+  },
 ];
 
-const adminNavigation: NavigationItem[] = [
-  { label: "Dashboard admin", to: "/admin", icon: "home", end: true },
-  { label: "Usuarios y roles", to: "/admin/users", icon: "users" },
-  { label: "Gestión académica", to: "/admin/academic-management", icon: "book" },
-  { label: "Quizzes", to: "/admin/quizzes", icon: "quiz" },
-  { label: "Catálogos", to: "/admin/catalogs", icon: "resource" },
-  { label: "Auditoría", to: "/admin/audit", icon: "audit" },
-  { label: "Mi cuenta", to: "/profile", icon: "profile" },
+const adminGroups: NavigationGroup[] = [
+  {
+    label: "Operaciones",
+    items: [
+      { label: "Resumen", to: "/admin", icon: "home", end: true },
+      { label: "Usuarios y roles", to: "/admin/users", icon: "users" },
+      { label: "Gestión académica", to: "/admin/academic-management", icon: "book" },
+      { label: "Quizzes", to: "/admin/quizzes", icon: "quiz" },
+      { label: "Catálogos", to: "/admin/catalogs", icon: "resource" },
+      { label: "Auditoría", to: "/admin/audit", icon: "audit" },
+    ],
+  },
+  {
+    label: "Personal",
+    items: [
+      { label: "Mi cuenta", to: "/profile", icon: "profile" },
+    ],
+  },
 ];
 
-const titleForPath = (path: string) => {
-  const titles: Array<[string, string]> = [
-    ["/admin/academic-management", "Gestión académica"],
-    ["/admin/users", "Usuarios y roles"],
-    ["/admin/quizzes", "Gestión de quizzes"],
-    ["/admin/catalogs", "Catálogos de contenido"],
-    ["/admin/audit", "Historial de actividad"],
-    ["/admin", "Dashboard administrativo"],
-    ["/quizzes/attempts", "Realizar quiz"],
-    ["/practices", "Prácticas académicas"],
-    ["/study-sessions", "Sesiones de estudio"],
-    ["/academic-setup", "Perfil académico"],
-    ["/recommendations", "Sugerencias de estudio"],
-    ["/notifications", "Notificaciones"],
-    ["/resources", "Recursos educativos"],
-    ["/progress", "Progreso académico"],
-    ["/subjects", "Materias"],
-    ["/profile", "Mi cuenta"],
-    ["/", "Dashboard"],
+const routeInfo = (path: string) => {
+  const routes: Array<[string, string, string]> = [
+    ["/admin/academic-management", "Operaciones académicas", "Gestión académica"],
+    ["/admin/users", "Administración", "Usuarios y roles"],
+    ["/admin/quizzes", "Administración", "Gestión de quizzes"],
+    ["/admin/catalogs", "Administración", "Catálogos de contenido"],
+    ["/admin/audit", "Control", "Historial de actividad"],
+    ["/admin", "Operaciones académicas", "Resumen administrativo"],
+    ["/quizzes/attempts", "Práctica guiada", "Realizar quiz"],
+    ["/practices", "Tu plan", "Prácticas académicas"],
+    ["/study-sessions", "Enfoque", "Sesiones de estudio"],
+    ["/academic-setup", "Configuración", "Perfil académico"],
+    ["/recommendations", "Siguiente paso", "Recomendaciones"],
+    ["/notifications", "Actividad", "Notificaciones"],
+    ["/resources", "Aprendizaje", "Biblioteca"],
+    ["/progress", "Rendimiento", "Progreso académico"],
+    ["/subjects", "Aprendizaje", "Materias"],
+    ["/profile", "Cuenta", "Mi perfil"],
+    ["/", "Tu espacio de aprendizaje", "Inicio"],
   ];
 
-  return titles.find(([prefix]) => path === prefix || (prefix !== "/" && path.startsWith(prefix)))?.[1] ?? "EduTrack AI";
+  const result = routes.find(([prefix]) =>
+    path === prefix || (prefix !== "/" && path.startsWith(prefix)),
+  );
+
+  return result
+    ? { kicker: result[1], title: result[2] }
+    : { kicker: "EduTrack AI", title: "Plataforma académica" };
+};
+
+const getInitialTheme = (): Theme => {
+  const stored = window.localStorage.getItem("edutrack-theme");
+  if (stored === "light" || stored === "dark") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
 const AppLayout = () => {
@@ -100,14 +150,24 @@ const AppLayout = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const navigation = isAdmin ? adminNavigation : studentNavigation;
-  const title = titleForPath(location.pathname);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const groups = isAdmin ? adminGroups : studentGroups;
+  const page = routeInfo(location.pathname);
   const initials = `${user?.firstName?.[0] ?? "U"}${user?.lastName?.[0] ?? ""}`.toUpperCase();
 
   const accountLabel = useMemo(
     () => user ? `${user.firstName} ${user.lastName}` : "Usuario",
     [user],
   );
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("edutrack-theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -118,85 +178,190 @@ const AppLayout = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const closeMobile = () => setMobileOpen(false);
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
 
-  const sidebar = (
-    <div className="flex h-full flex-col">
-      <div className="flex min-h-20 items-center justify-between border-b border-border px-4">
-        <NavLink to={isAdmin ? "/admin" : "/"} onClick={closeMobile} className="flex min-w-0 items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary font-bold text-white">EA</span>
-          {!collapsed && <span className="truncate text-lg font-bold text-content">EduTrack AI</span>}
-        </NavLink>
-        <button type="button" onClick={() => setMobileOpen(false)} className="grid min-h-11 min-w-11 place-items-center rounded-control text-muted hover:bg-white/10 hover:text-content lg:hidden" aria-label="Cerrar menú">×</button>
-      </div>
+  const renderSidebar = (mobile = false) => {
+    const compact = !mobile && collapsed;
 
-      <nav aria-label="Navegación principal" className="flex-1 space-y-1 overflow-y-auto p-3">
-        {navigation.map((item) => (
+    return (
+      <div className="flex h-full flex-col bg-primary-hover text-white">
+        <div className="flex min-h-[74px] items-center justify-between border-b border-white/10 px-4">
           <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={closeMobile}
-            className={({ isActive }) => [
-              "flex min-h-12 items-center gap-3 rounded-control px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-              isActive ? "bg-primary text-white" : "text-muted hover:bg-white/10 hover:text-content",
-              collapsed ? "justify-center" : "",
-            ].join(" ")}
-            title={collapsed ? item.label : undefined}
+            to={isAdmin ? "/admin" : "/"}
+            className={`flex min-w-0 items-center gap-3 ${compact ? "justify-center" : ""}`}
           >
-            <Icon name={item.icon} />
-            {!collapsed && <span>{item.label}</span>}
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-sm font-extrabold text-primary-hover shadow-sm">
+              ET
+            </span>
+            {!compact && (
+              <span className="min-w-0">
+                <strong className="block truncate text-[15px]">EduTrack AI</strong>
+                <small className="block truncate text-[10px] font-medium text-white/55">
+                  Aprendizaje con propósito
+                </small>
+              </span>
+            )}
           </NavLink>
-        ))}
-      </nav>
+          {mobile && (
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="grid min-h-10 min-w-10 place-items-center rounded-control text-xl text-white/70 hover:bg-white/10 hover:text-white"
+              aria-label="Cerrar menú"
+            >
+              ×
+            </button>
+          )}
+        </div>
 
-      <div className="border-t border-border p-3">
-        <button type="button" onClick={handleLogout} className="flex min-h-12 w-full items-center justify-center rounded-control border border-border px-3 text-sm font-semibold text-content hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-          {collapsed ? "Salir" : "Cerrar sesión"}
-        </button>
+        <nav aria-label="Navegación principal" className="prototype-scrollbar flex-1 overflow-y-auto px-3 py-4">
+          {groups.map((group) => (
+            <div key={group.label} className="mb-5">
+              {!compact && (
+                <p className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white/38">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) => [
+                      "flex min-h-10 items-center gap-3 rounded-[10px] px-2.5 text-[13px] font-medium transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
+                      isActive
+                        ? "bg-white text-primary-hover shadow-sm"
+                        : "text-white/68 hover:bg-white/10 hover:text-white",
+                      compact ? "justify-center" : "",
+                    ].join(" ")}
+                    title={compact ? item.label : undefined}
+                  >
+                    <Icon name={item.icon} />
+                    {!compact && <span>{item.label}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {!compact && !isAdmin && (
+          <div className="mx-3 mb-3 rounded-xl border border-white/10 bg-white/[0.07] p-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Tu próximo paso</p>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-white/85">
+              Continúa una práctica corta y mantén tu progreso activo.
+            </p>
+            <NavLink to="/practices" className="mt-3 inline-flex text-[11px] font-bold text-white underline-offset-4 hover:underline">
+              Ver mi plan
+            </NavLink>
+          </div>
+        )}
+
+        <div className="border-t border-white/10 p-3">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={`flex min-h-10 w-full items-center gap-3 rounded-[10px] px-2.5 text-[13px] font-semibold text-white/65 transition hover:bg-white/10 hover:text-white ${compact ? "justify-center" : ""}`}
+            title={compact ? "Cerrar sesión" : undefined}
+          >
+            <Icon name="logout" />
+            {!compact && <span>Cerrar sesión</span>}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-app-bg text-content">
-      {mobileOpen && <button type="button" aria-label="Cerrar menú" className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={closeMobile} />}
+    <div className="app-grid-background min-h-screen overflow-x-hidden text-content">
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px] lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-surface shadow-2xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        {sidebar}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[278px] shadow-2xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        {renderSidebar(true)}
       </aside>
 
-      <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-border bg-surface transition-[width] lg:block ${collapsed ? "w-20" : "w-72"}`}>
-        {sidebar}
+      <aside className={`fixed inset-y-0 left-0 z-30 hidden overflow-hidden transition-[width] duration-200 lg:block ${collapsed ? "w-[76px]" : "w-[218px]"}`}>
+        {renderSidebar()}
       </aside>
 
-      <div className={`min-h-screen transition-[padding] ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
-        <header className="sticky top-0 z-20 border-b border-border bg-app-bg/95 backdrop-blur">
-          <div className="flex min-h-20 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      <div className={`min-h-screen transition-[padding] duration-200 ${collapsed ? "lg:pl-[76px]" : "lg:pl-[218px]"}`}>
+        <header className="sticky top-0 z-20 border-b border-border/80 bg-surface/95 backdrop-blur">
+          <div className="flex min-h-[74px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-7">
             <div className="flex min-w-0 items-center gap-3">
-              <button type="button" onClick={() => setMobileOpen(true)} className="grid min-h-11 min-w-11 place-items-center rounded-control border border-border text-content hover:bg-white/10 lg:hidden" aria-label="Abrir menú" aria-expanded={mobileOpen}>☰</button>
-              <button type="button" onClick={() => setCollapsed((value) => !value)} className="hidden min-h-11 min-w-11 place-items-center rounded-control border border-border text-content hover:bg-white/10 lg:grid" aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}>☰</button>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="grid min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-content hover:bg-surface-muted lg:hidden"
+                aria-label="Abrir menú"
+                aria-expanded={mobileOpen}
+              >
+                ☰
+              </button>
+              <button
+                type="button"
+                onClick={() => setCollapsed((value) => !value)}
+                className="hidden min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-content hover:bg-surface-muted lg:grid"
+                aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+              >
+                ☰
+              </button>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{isAdmin ? "Administración" : "Estudiante"}</p>
-                <h1 className="truncate text-xl font-bold sm:text-2xl">{title}</h1>
+                <p className="prototype-eyebrow truncate">{page.kicker}</p>
+                <h1 className="truncate text-[17px] font-bold tracking-[-0.01em] sm:text-xl">{page.title}</h1>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <NavLink to="/notifications" className="grid min-h-11 min-w-11 place-items-center rounded-control border border-border text-muted hover:bg-white/10 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Abrir notificaciones"><Icon name="bell" /></NavLink>
-              <NavLink to="/profile" className="flex min-h-11 items-center gap-3 rounded-control border border-border px-2 pr-3 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" /> : <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/20 text-xs font-bold text-primary">{initials}</span>}
-                <span className="hidden max-w-40 truncate text-sm font-semibold sm:block">{accountLabel}</span>
+              <span className="hidden rounded-full bg-surface-muted px-3 py-2 text-[11px] font-semibold text-muted md:inline-flex">
+                Mayo–Agosto 2026
+              </span>
+              <button
+                type="button"
+                onClick={() => setTheme((value) => value === "light" ? "dark" : "light")}
+                className="grid min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-base text-muted hover:bg-surface-muted hover:text-content"
+                aria-label={theme === "light" ? "Activar modo oscuro" : "Activar modo claro"}
+                title={theme === "light" ? "Modo oscuro" : "Modo claro"}
+              >
+                {theme === "light" ? "◐" : "☀"}
+              </button>
+              <NavLink
+                to="/notifications"
+                className="relative grid min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-muted hover:bg-surface-muted hover:text-content"
+                aria-label="Abrir notificaciones"
+              >
+                <Icon name="bell" />
+                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-warning" />
+              </NavLink>
+              <NavLink
+                to="/profile"
+                className="flex min-h-10 items-center gap-2 rounded-control border border-border bg-surface px-1.5 pr-2.5 hover:bg-surface-muted"
+              >
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
+                ) : (
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                    {initials}
+                  </span>
+                )}
+                <span className="hidden max-w-36 truncate text-xs font-semibold sm:block">{accountLabel}</span>
               </NavLink>
             </div>
           </div>
         </header>
 
-        <main id="main-content" className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main id="main-content" className="mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
           <Outlet />
         </main>
       </div>
