@@ -6,6 +6,15 @@ import "./index.css";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 
+const savedTheme = window.localStorage.getItem("edutrack-theme");
+const initialTheme = savedTheme === "light" || savedTheme === "dark"
+  ? savedTheme
+  : window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+
+document.documentElement.dataset.theme = initialTheme;
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
