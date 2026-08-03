@@ -18,8 +18,6 @@ type IconName =
   | "audit"
   | "logout";
 
-type Theme = "light" | "dark";
-
 interface NavigationItem {
   label: string;
   to: string;
@@ -136,19 +134,12 @@ const routeInfo = (path: string) => {
     : { kicker: "EduTrack AI", title: "Plataforma académica" };
 };
 
-const getInitialTheme = (): Theme => {
-  const stored = window.localStorage.getItem("edutrack-theme");
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-};
-
 const AppLayout = () => {
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const groups = isAdmin ? adminGroups : studentGroups;
   const page = routeInfo(location.pathname);
   const initials = `${user?.firstName?.[0] ?? "U"}${user?.lastName?.[0] ?? ""}`.toUpperCase();
@@ -159,11 +150,9 @@ const AppLayout = () => {
   );
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("edutrack-theme", theme);
-  }, [theme]);
+    document.documentElement.removeAttribute("data-theme");
+    window.localStorage.removeItem("edutrack-theme");
 
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobileOpen(false);
     };
@@ -184,30 +173,31 @@ const AppLayout = () => {
     };
 
     return (
-      <div className="flex h-full flex-col bg-primary-hover text-white">
-        <div className="flex min-h-[74px] items-center justify-between border-b border-white/10 px-4">
+      <div className="flex h-full flex-col bg-white text-content">
+        <div className="flex min-h-[74px] items-center justify-between border-b border-border px-4">
           <NavLink
             to={isAdmin ? "/admin" : "/"}
             onClick={closeMobile}
             className={`flex min-w-0 items-center gap-3 ${compact ? "justify-center" : ""}`}
           >
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-sm font-extrabold text-primary-hover shadow-sm">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-sm font-extrabold text-white">
               ET
             </span>
             {!compact && (
               <span className="min-w-0">
-                <strong className="block truncate text-[15px]">EduTrack AI</strong>
-                <small className="block truncate text-[10px] font-medium text-white/55">
+                <strong className="block truncate text-[15px] text-content">EduTrack AI</strong>
+                <small className="block truncate text-[10px] font-medium text-muted">
                   Aprendizaje con propósito
                 </small>
               </span>
             )}
           </NavLink>
+
           {mobile && (
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="grid min-h-10 min-w-10 place-items-center rounded-control text-xl text-white/70 hover:bg-white/10 hover:text-white"
+              className="grid min-h-10 min-w-10 place-items-center rounded-control text-xl text-muted hover:bg-surface-muted hover:text-content"
               aria-label="Cerrar menú"
             >
               ×
@@ -219,10 +209,11 @@ const AppLayout = () => {
           {groups.map((group) => (
             <div key={group.label} className="mb-5">
               {!compact && (
-                <p className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white/38">
+                <p className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-muted">
                   {group.label}
                 </p>
               )}
+
               <div className="space-y-1">
                 {group.items.map((item) => (
                   <NavLink
@@ -232,10 +223,10 @@ const AppLayout = () => {
                     onClick={closeMobile}
                     className={({ isActive }) => [
                       "flex min-h-10 items-center gap-3 rounded-[10px] px-2.5 text-[13px] font-medium transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                       isActive
-                        ? "bg-white text-primary-hover shadow-sm"
-                        : "text-white/68 hover:bg-white/10 hover:text-white",
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted hover:bg-surface-muted hover:text-content",
                       compact ? "justify-center" : "",
                     ].join(" ")}
                     title={compact ? item.label : undefined}
@@ -249,27 +240,11 @@ const AppLayout = () => {
           ))}
         </nav>
 
-        {!compact && !isAdmin && (
-          <div className="mx-3 mb-3 rounded-xl border border-white/10 bg-white/[0.07] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Tu próximo paso</p>
-            <p className="mt-1 text-xs font-semibold leading-relaxed text-white/85">
-              Continúa una práctica corta y mantén tu progreso activo.
-            </p>
-            <NavLink
-              to="/practices"
-              onClick={closeMobile}
-              className="mt-3 inline-flex text-[11px] font-bold text-white underline-offset-4 hover:underline"
-            >
-              Ver mi plan
-            </NavLink>
-          </div>
-        )}
-
-        <div className="border-t border-white/10 p-3">
+        <div className="border-t border-border p-3">
           <button
             type="button"
             onClick={handleLogout}
-            className={`flex min-h-10 w-full items-center gap-3 rounded-[10px] px-2.5 text-[13px] font-semibold text-white/65 transition hover:bg-white/10 hover:text-white ${compact ? "justify-center" : ""}`}
+            className={`flex min-h-10 w-full items-center gap-3 rounded-[10px] px-2.5 text-[13px] font-semibold text-muted transition hover:bg-surface-muted hover:text-content ${compact ? "justify-center" : ""}`}
             title={compact ? "Cerrar sesión" : undefined}
           >
             <Icon name="logout" />
@@ -281,90 +256,92 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="app-grid-background min-h-screen overflow-x-hidden text-content">
+    <div className="min-h-screen overflow-x-hidden bg-white text-content">
       {mobileOpen && (
         <button
           type="button"
           aria-label="Cerrar menú"
-          className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px] lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/20 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[278px] shadow-2xl transition-transform lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-[min(284px,86vw)] border-r border-border bg-white shadow-xl transition-transform lg:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         {renderSidebar(true)}
       </aside>
 
-      <aside className={`fixed inset-y-0 left-0 z-30 hidden overflow-hidden transition-[width] duration-200 lg:block ${collapsed ? "w-[76px]" : "w-[218px]"}`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 hidden border-r border-border bg-white transition-[width] lg:block ${
+          collapsed ? "w-[72px]" : "w-[236px]"
+        }`}
+      >
         {renderSidebar()}
       </aside>
 
-      <div className={`min-h-screen transition-[padding] duration-200 ${collapsed ? "lg:pl-[76px]" : "lg:pl-[218px]"}`}>
-        <header className="sticky top-0 z-20 border-b border-border/80 bg-surface/95 backdrop-blur">
-          <div className="flex min-h-[74px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-7">
+      <div className={`min-h-screen transition-[padding] ${collapsed ? "lg:pl-[72px]" : "lg:pl-[236px]"}`}>
+        <header className="sticky top-0 z-20 border-b border-border bg-white/95 backdrop-blur">
+          <div className="flex min-h-[74px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="grid min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-content hover:bg-surface-muted lg:hidden"
+                className="grid min-h-10 min-w-10 place-items-center rounded-control border border-border text-content hover:bg-surface-muted lg:hidden"
                 aria-label="Abrir menú"
                 aria-expanded={mobileOpen}
               >
                 ☰
               </button>
+
               <button
                 type="button"
                 onClick={() => setCollapsed((value) => !value)}
-                className="hidden min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-content hover:bg-surface-muted lg:grid"
+                className="hidden min-h-10 min-w-10 place-items-center rounded-control border border-border text-content hover:bg-surface-muted lg:grid"
                 aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
               >
                 ☰
               </button>
+
               <div className="min-w-0">
                 <p className="prototype-eyebrow truncate">{page.kicker}</p>
-                <h1 className="truncate text-[17px] font-bold tracking-[-0.01em] sm:text-xl">{page.title}</h1>
+                <h1 className="truncate text-xl font-bold tracking-[-0.02em] text-content sm:text-2xl">
+                  {page.title}
+                </h1>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="hidden rounded-full bg-surface-muted px-3 py-2 text-[11px] font-semibold text-muted md:inline-flex">
-                Mayo–Agosto 2026
-              </span>
-              <button
-                type="button"
-                onClick={() => setTheme((value) => value === "light" ? "dark" : "light")}
-                className="grid min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-base text-muted hover:bg-surface-muted hover:text-content"
-                aria-label={theme === "light" ? "Activar modo oscuro" : "Activar modo claro"}
-                title={theme === "light" ? "Modo oscuro" : "Modo claro"}
-              >
-                {theme === "light" ? "◐" : "☀"}
-              </button>
               <NavLink
                 to="/notifications"
-                className="relative grid min-h-10 min-w-10 place-items-center rounded-control border border-border bg-surface text-muted hover:bg-surface-muted hover:text-content"
+                className="grid min-h-10 min-w-10 place-items-center rounded-control border border-border text-muted hover:bg-surface-muted hover:text-content"
                 aria-label="Abrir notificaciones"
               >
                 <Icon name="bell" />
-                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-warning" />
               </NavLink>
+
               <NavLink
                 to="/profile"
-                className="flex min-h-10 items-center gap-2 rounded-control border border-border bg-surface px-1.5 pr-2.5 hover:bg-surface-muted"
+                className="flex min-h-10 items-center gap-2 rounded-control border border-border bg-white px-2 pr-3 hover:bg-surface-muted"
               >
                 {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
+                  <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
                 ) : (
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                     {initials}
                   </span>
                 )}
-                <span className="hidden max-w-36 truncate text-xs font-semibold sm:block">{accountLabel}</span>
+                <span className="hidden max-w-40 truncate text-sm font-semibold text-content sm:block">
+                  {accountLabel}
+                </span>
               </NavLink>
             </div>
           </div>
         </header>
 
-        <main id="main-content" className="mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
+        <main id="main-content" className="mx-auto w-full max-w-[1600px] bg-white px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>
       </div>
