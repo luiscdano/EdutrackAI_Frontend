@@ -7,7 +7,7 @@ import Loader from "../ui/Loader";
 interface Props {
   title: string;
   description: string;
-  onBack: () => void;
+  onBack?: () => void;
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -26,42 +26,36 @@ const ContentShell = ({
   children,
 }: Props) => {
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-app-bg">
-        <Loader size="lg" showLabel label={`Cargando ${title.toLowerCase()}...`} />
-      </main>
-    );
+    return <div className="flex min-h-[50vh] items-center justify-center"><Loader size="lg" showLabel label={`Cargando ${title.toLowerCase()}...`} /></div>;
   }
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-app-bg px-4">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <Card padding="lg" className="w-full max-w-xl text-center">
-          <h1 className="text-2xl font-bold text-content">No fue posible cargar la información</h1>
+          <h2 className="text-2xl font-bold text-content">No fue posible cargar la información</h2>
           <p className="mt-3 text-muted">{error}</p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
             {onRetry && <Button onClick={onRetry}>Reintentar</Button>}
-            <Button variant="outline" onClick={onBack}>Volver</Button>
+            {onBack && <Button variant="outline" onClick={onBack}>Volver</Button>}
           </div>
         </Card>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-app-bg px-4 py-8">
-      <div className="mx-auto w-full max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
-            <h1 className="mt-4 text-3xl font-bold text-content">{title}</h1>
-            <p className="mt-2 max-w-3xl text-muted">{description}</p>
-          </div>
-          {actions}
-        </header>
-        {children}
-      </div>
-    </main>
+    <section className="w-full space-y-6">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          {onBack && <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>}
+          <h2 className={`${onBack ? "mt-4" : ""} text-2xl font-bold text-content sm:text-3xl`}>{title}</h2>
+          <p className="mt-2 max-w-3xl text-muted">{description}</p>
+        </div>
+        {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
+      </header>
+      {children}
+    </section>
   );
 };
 
