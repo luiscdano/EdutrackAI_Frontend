@@ -1,29 +1,38 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
+import Loader from "./components/ui/Loader";
 import { useAuth } from "./context/AuthContext";
 import AppLayout from "./layouts/AppLayout";
-import AcademicProfileRoute from "./pages/academic/AcademicProfileRoute";
-import AcademicManagement from "./pages/admin/AcademicManagement";
-import AdminAudit from "./pages/admin/AdminAudit";
-import AdminCatalogs from "./pages/admin/AdminCatalogs";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminQuizzes from "./pages/admin/AdminQuizzes";
-import AdminUsers from "./pages/admin/AdminUsers";
-import Activities from "./pages/activities/Activities";
-import Dashboard from "./pages/dashboard/Dashboard";
-import DesignSystem from "./pages/design-system/DesignSystem";
 import { ForbiddenPage, NotFoundPage, RouteErrorPage } from "./pages/errors/StatusPage";
 import Login from "./pages/login/Login";
-import Notifications from "./pages/notifications/Notifications";
-import Profile from "./pages/profile/Profile";
-import Progress from "./pages/progress/Progress";
-import QuizAttempt from "./pages/quizzes/QuizAttempt";
-import QuizCatalog from "./pages/quizzes/QuizCatalog";
-import Recommendations from "./pages/recommendations/Recommendations";
 import Register from "./pages/register/Register";
-import Resources from "./pages/resources/Resources";
-import Subjects from "./pages/subjects/Subjects";
 import { AdminRoute, ProtectedRoute, PublicOnlyRoute } from "./routes/RouteGuards";
+
+const AcademicProfileRoute = lazy(() => import("./pages/academic/AcademicProfileRoute"));
+const AcademicManagement = lazy(() => import("./pages/admin/AcademicManagement"));
+const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
+const AdminCatalogs = lazy(() => import("./pages/admin/AdminCatalogs"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminQuizzes = lazy(() => import("./pages/admin/AdminQuizzes"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const Activities = lazy(() => import("./pages/activities/Activities"));
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+const DesignSystem = lazy(() => import("./pages/design-system/DesignSystem"));
+const Notifications = lazy(() => import("./pages/notifications/Notifications"));
+const Profile = lazy(() => import("./pages/profile/Profile"));
+const Progress = lazy(() => import("./pages/progress/Progress"));
+const QuizAttempt = lazy(() => import("./pages/quizzes/QuizAttempt"));
+const QuizCatalog = lazy(() => import("./pages/quizzes/QuizCatalog"));
+const Recommendations = lazy(() => import("./pages/recommendations/Recommendations"));
+const Resources = lazy(() => import("./pages/resources/Resources"));
+const Subjects = lazy(() => import("./pages/subjects/Subjects"));
+
+const RouteLoader = () => (
+  <div className="flex min-h-[50vh] items-center justify-center">
+    <Loader size="lg" showLabel label="Cargando pantalla..." />
+  </div>
+);
 
 const LoginRoute = () => {
   const { completeAuthentication } = useAuth();
@@ -119,43 +128,45 @@ const AdminDashboardRoute = () => {
 
 export default function App() {
   return (
-    <Routes>
-      <Route errorElement={<RouteErrorPage />}>
-        <Route element={<PublicOnlyRoute />}>
-          <Route path="/login" element={<LoginRoute />} />
-          <Route path="/register" element={<RegisterRoute />} />
-        </Route>
+    <Suspense fallback={<RouteLoader />}>
+      <Routes>
+        <Route errorElement={<RouteErrorPage />}>
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={<LoginRoute />} />
+            <Route path="/register" element={<RegisterRoute />} />
+          </Route>
 
-        <Route path="/design-system" element={<DesignSystem />} />
-        <Route path="/403" element={<ForbiddenPage />} />
+          <Route path="/design-system" element={<DesignSystem />} />
+          <Route path="/403" element={<ForbiddenPage />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
-            <Route index element={<StudentDashboardRoute />} />
-            <Route path="profile" element={<ProfileRoute />} />
-            <Route path="subjects" element={<SubjectsRoute />} />
-            <Route path="progress" element={<ProgressRoute />} />
-            <Route path="study-sessions" element={<StudySessionsRoute />} />
-            <Route path="practices" element={<QuizCatalog />} />
-            <Route path="quizzes/attempts/:attemptId" element={<QuizAttempt />} />
-            <Route path="resources" element={<ResourcesRoute />} />
-            <Route path="recommendations" element={<RecommendationsRoute />} />
-            <Route path="notifications" element={<NotificationsRoute />} />
-            <Route path="academic-setup" element={<AcademicSetupRoute />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route index element={<StudentDashboardRoute />} />
+              <Route path="profile" element={<ProfileRoute />} />
+              <Route path="subjects" element={<SubjectsRoute />} />
+              <Route path="progress" element={<ProgressRoute />} />
+              <Route path="study-sessions" element={<StudySessionsRoute />} />
+              <Route path="practices" element={<QuizCatalog />} />
+              <Route path="quizzes/attempts/:attemptId" element={<QuizAttempt />} />
+              <Route path="resources" element={<ResourcesRoute />} />
+              <Route path="recommendations" element={<RecommendationsRoute />} />
+              <Route path="notifications" element={<NotificationsRoute />} />
+              <Route path="academic-setup" element={<AcademicSetupRoute />} />
 
-            <Route element={<AdminRoute />}>
-              <Route path="admin" element={<AdminDashboardRoute />} />
-              <Route path="admin/users" element={<AdminUsers />} />
-              <Route path="admin/academic-management" element={<AcademicManagement />} />
-              <Route path="admin/quizzes" element={<AdminQuizzes />} />
-              <Route path="admin/catalogs" element={<AdminCatalogs />} />
-              <Route path="admin/audit" element={<AdminAudit />} />
+              <Route element={<AdminRoute />}>
+                <Route path="admin" element={<AdminDashboardRoute />} />
+                <Route path="admin/users" element={<AdminUsers />} />
+                <Route path="admin/academic-management" element={<AcademicManagement />} />
+                <Route path="admin/quizzes" element={<AdminQuizzes />} />
+                <Route path="admin/catalogs" element={<AdminCatalogs />} />
+                <Route path="admin/audit" element={<AdminAudit />} />
+              </Route>
             </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
