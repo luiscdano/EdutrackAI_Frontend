@@ -85,6 +85,9 @@ const Pagination = ({
     onPageChange(newPage);
   };
 
+  const navigationButtonClass =
+    "min-h-11 rounded-control border border-border bg-surface px-3 text-sm text-content transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50";
+
   return (
     <nav
       {...props}
@@ -98,7 +101,7 @@ const Pagination = ({
         type="button"
         onClick={() => changePage(page - 1)}
         disabled={disabled || page === 1}
-        className="min-h-11 rounded-control border border-border px-3 text-sm text-content transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className={navigationButtonClass}
       >
         Anterior
       </button>
@@ -132,8 +135,8 @@ const Pagination = ({
               "min-h-11 min-w-11 rounded-control border px-3 text-sm font-medium",
               "transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               isCurrentPage
-                ? "border-primary bg-primary text-white"
-                : "border-border bg-surface text-content hover:bg-white/10",
+                ? "border-primary bg-primary text-surface"
+                : "border-border bg-surface text-content hover:bg-surface-muted",
               disabled &&
                 "cursor-not-allowed opacity-50",
             )}
@@ -147,7 +150,7 @@ const Pagination = ({
         type="button"
         onClick={() => changePage(page + 1)}
         disabled={disabled || page === totalPages}
-        className="min-h-11 rounded-control border border-border px-3 text-sm text-content transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className={navigationButtonClass}
       >
         Siguiente
       </button>
