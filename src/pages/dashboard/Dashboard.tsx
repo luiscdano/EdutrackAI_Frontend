@@ -1,5 +1,4 @@
 import PerformanceSection from "../../components/dashboard/PerformanceSection";
-import QuickActions from "../../components/dashboard/QuickActions";
 import StreakSection from "../../components/dashboard/StreakSection";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
@@ -203,8 +202,6 @@ const Dashboard = (props: Props) => {
         <PerformanceSection items={data.performance} />
         <StreakSection streak={data.streak} />
       </section>
-
-      <QuickActions {...props} onRefresh={() => void load()} />
     </div>
   );
 };
