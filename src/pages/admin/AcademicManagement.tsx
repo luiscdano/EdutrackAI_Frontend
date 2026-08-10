@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import AdminAcademicManagement from "../../components/admin-academic/AdminAcademicManagement";
+import EvaluationsManager from "../../components/admin-academic/EvaluationsManager";
 import {
   createAdminSubject,
   getAdminAcademicSnapshot,
@@ -13,11 +14,21 @@ import {
   upsertAcademicResult,
   type AdminAcademicSnapshot,
 } from "../../services/admin-academic.service";
+import {
+  createEvaluation,
+  deactivateEvaluation,
+  getEvaluations,
+  updateEvaluation,
+} from "../../services/adaptive.service";
 import type {
   ResultFormData,
   SubjectFormData,
   SubjectStatus,
 } from "../../types/adminAcademic.types";
+import type {
+  EvaluationPayload,
+  EvaluationSummary,
+} from "../../types/adaptive.types";
 
 const emptySnapshot: AdminAcademicSnapshot = {
   subjects: [],
@@ -29,7 +40,10 @@ const emptySnapshot: AdminAcademicSnapshot = {
 const AcademicManagement = () => {
   const [snapshot, setSnapshot] =
     useState<AdminAcademicSnapshot>(emptySnapshot);
+  const [evaluations, setEvaluations] =
+    useState<EvaluationSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
 
@@ -38,7 +52,12 @@ const AcademicManagement = () => {
     setError(null);
 
     try {
-      setSnapshot(await getAdminAcademicSnapshot());
+      const [nextSnapshot, nextEvaluations] = await Promise.all([
+        getAdminAcademicSnapshot(),
+        getEvaluations(),
+      ]);
+      setSnapshot(nextSnapshot);
+      setEvaluations(nextEvaluations);
       setRevision((current) => current + 1);
     } catch (loadError) {
       setError(
@@ -92,21 +111,59 @@ const AcademicManagement = () => {
   const handleUpsertResult = (data: ResultFormData) =>
     execute(() => upsertAcademicResult(data, snapshot));
 
+  const refreshEvaluations = useCallback(async () => {
+    setEvaluationLoading(true);
+    try {
+      setEvaluations(await getEvaluations());
+    } finally {
+      setEvaluationLoading(false);
+    }
+  }, []);
+
+  const handleCreateEvaluation = async (payload: EvaluationPayload) => {
+    await createEvaluation(payload);
+    await refreshEvaluations();
+  };
+
+  const handleUpdateEvaluation = async (
+    evaluationId: string,
+    payload: Partial<Omit<EvaluationPayload, "subjectId">>,
+  ) => {
+    await updateEvaluation(evaluationId, payload);
+    await refreshEvaluations();
+  };
+
+  const handleDeactivateEvaluation = async (evaluationId: string) => {
+    await deactivateEvaluation(evaluationId);
+    await refreshEvaluations();
+  };
+
   return (
-    <AdminAcademicManagement
-      key={revision}
-      subjects={snapshot.subjects}
-      assignments={snapshot.assignments}
-      results={snapshot.results}
-      history={snapshot.history}
-      loading={loading}
-      error={error}
-      onRetry={() => void load()}
-      onCreateSubject={handleCreate}
-      onUpdateSubject={handleUpdate}
-      onToggleSubjectStatus={handleToggle}
-      onUpsertResult={handleUpsertResult}
-    />
+    <div className="space-y-8">
+      <EvaluationsManager
+        subjects={snapshot.subjects}
+        evaluations={evaluations}
+        loading={evaluationLoading}
+        onCreate={handleCreateEvaluation}
+        onUpdate={handleUpdateEvaluation}
+        onDeactivate={handleDeactivateEvaluation}
+      />
+
+      <AdminAcademicManagement
+        key={revision}
+        subjects={snapshot.subjects}
+        assignments={snapshot.assignments}
+        results={snapshot.results}
+        history={snapshot.history}
+        loading={loading}
+        error={error}
+        onRetry={() => void load()}
+        onCreateSubject={handleCreate}
+        onUpdateSubject={handleUpdate}
+        onToggleSubjectStatus={handleToggle}
+        onUpsertResult={handleUpsertResult}
+      />
+    </div>
   );
 };
 
