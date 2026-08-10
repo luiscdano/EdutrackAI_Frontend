@@ -25,6 +25,12 @@ export const getAdminAdaptiveRiskOverview = () =>
 export const recalculateAdaptivePlan = () =>
   apiRequest<unknown>("/adaptive-engine/recalculate", { method: "POST" });
 
+export const recalculateAllAdaptivePlans = () =>
+  apiRequest<Array<{ userId: string; ok: boolean; error?: string }>>(
+    "/adaptive-engine/recalculate-all",
+    { method: "POST" },
+  );
+
 export const getStudyPlan = (includeHistory = false) =>
   apiRequest<StudyPlanActivity[]>(
     `/study-plan${includeHistory ? "?includeHistory=true" : ""}`,
