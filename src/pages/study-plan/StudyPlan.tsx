@@ -6,6 +6,7 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import {
   getAdaptiveOverview,
+  getStudyPlan,
   getUpcomingEvaluations,
   regenerateStudyPlan,
   updateStudyPlanActivity,
@@ -34,6 +35,13 @@ const riskLabel = (level: StudyPlanActivity["priorityLevel"]) => {
   return "Estable";
 };
 
+const statusLabel = (status: StudyPlanActivity["status"]) => {
+  if (status === "completed") return "Completada";
+  if (status === "skipped") return "Omitida";
+  if (status === "in_progress") return "En curso";
+  return "Pendiente";
+};
+
 const activityLabel = (type: string) => {
   const labels: Record<string, string> = {
     exam_preparation: "Preparación de evaluación",
@@ -58,6 +66,7 @@ const componentLabel = (key: string) => {
 const StudyPlan = () => {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<StudyPlanActivity[]>([]);
+  const [history, setHistory] = useState<StudyPlanActivity[]>([]);
   const [overview, setOverview] = useState<AdaptiveOverview | null>(null);
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
   const [evaluations, setEvaluations] = useState<EvaluationSummary[]>([]);
@@ -72,13 +81,23 @@ const StudyPlan = () => {
 
     try {
       const nextPlan = regenerate ? await regenerateStudyPlan() : null;
-      const [nextOverview, nextQuizzes, nextEvaluations] = await Promise.all([
+      const [nextOverview, nextQuizzes, nextEvaluations, allActivities] = await Promise.all([
         getAdaptiveOverview(),
         getQuizzes(),
         getUpcomingEvaluations(),
+        getStudyPlan(true),
       ]);
 
       setPlan(nextPlan ?? nextOverview.plan);
+      setHistory(
+        allActivities
+          .filter((activity) => activity.status === "completed" || activity.status === "skipped")
+          .sort((a, b) => {
+            const aDate = new Date(a.completedAt ?? a.updateAt ?? a.scheduledFor).getTime();
+            const bDate = new Date(b.completedAt ?? b.updateAt ?? b.scheduledFor).getTime();
+            return bDate - aDate;
+          }),
+      );
       setOverview(nextOverview);
       setQuizzes(nextQuizzes.filter((quiz) => quiz.isActive));
       setEvaluations(nextEvaluations);
@@ -107,6 +126,9 @@ const StudyPlan = () => {
     }),
     [plan],
   );
+
+  const completedCount = history.filter((activity) => activity.status === "completed").length;
+  const skippedCount = history.filter((activity) => activity.status === "skipped").length;
 
   const updateActivity = async (
     activity: StudyPlanActivity,
@@ -189,6 +211,7 @@ const StudyPlan = () => {
       onRetry={() => void load(true)}
       actions={
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => navigate("/progress")}>Ver progreso</Button>
           <Button variant="outline" onClick={() => navigate("/quizzes")}>Explorar prácticas</Button>
           <Button loading={refreshing} onClick={() => void load(true)}>Recalcular plan</Button>
         </div>
@@ -259,6 +282,24 @@ const StudyPlan = () => {
         </Card>
       </section>
 
+      <section className="grid gap-3 sm:grid-cols-3">
+        <Card padding="md">
+          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Actividades activas</span>
+          <strong className="mt-2 block text-2xl text-content">{sortedPlan.length}</strong>
+          <small className="mt-1 block text-xs text-muted">Pendientes o en curso</small>
+        </Card>
+        <Card padding="md">
+          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Completadas</span>
+          <strong className="mt-2 block text-2xl text-content">{completedCount}</strong>
+          <small className="mt-1 block text-xs text-muted">Acciones terminadas</small>
+        </Card>
+        <Card padding="md">
+          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Omitidas</span>
+          <strong className="mt-2 block text-2xl text-content">{skippedCount}</strong>
+          <small className="mt-1 block text-xs text-muted">Decisiones del estudiante</small>
+        </Card>
+      </section>
+
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -291,6 +332,9 @@ const StudyPlan = () => {
                       <span className="rounded-full bg-surface-muted px-3 py-1 text-[10px] font-semibold text-muted">
                         {activityLabel(activity.activityType)}
                       </span>
+                      {activity.status === "in_progress" && (
+                        <span className="prototype-badge prototype-badge-attention">En curso</span>
+                      )}
                     </div>
 
                     <h3 className="mt-3 text-xl font-bold text-content">{activity.title}</h3>
@@ -328,6 +372,42 @@ const StudyPlan = () => {
           </div>
         )}
       </section>
+
+      {history.length > 0 && (
+        <section className="space-y-4">
+          <div>
+            <span className="prototype-eyebrow">Historial del plan</span>
+            <h2 className="mt-1 text-xl font-bold text-content">Decisiones y actividades recientes</h2>
+            <p className="mt-1 text-sm text-muted">
+              Este historial ayuda a explicar cómo tus acciones terminan influyendo en los próximos análisis del motor.
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {history.slice(0, 8).map((activity) => (
+              <Card key={activity.id} padding="md" className="h-full">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="prototype-badge">{activity.subject.name}</span>
+                    <h3 className="mt-2 font-bold text-content">{activity.title}</h3>
+                  </div>
+                  <span className="rounded-full bg-surface-muted px-3 py-1 text-[10px] font-semibold text-muted">
+                    {statusLabel(activity.status)}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-muted">{activity.reason}</p>
+                <div className="mt-4 flex flex-wrap gap-2 text-[10px] text-muted">
+                  <span>{activityLabel(activity.activityType)}</span>
+                  <span>·</span>
+                  <span>{activity.durationMinutes} min</span>
+                  <span>·</span>
+                  <span>{formatDate(activity.completedAt ?? activity.updateAt ?? activity.scheduledFor)}</span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
     </ContentShell>
   );
 };
