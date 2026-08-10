@@ -4,12 +4,20 @@ import { useNavigate } from "react-router-dom";
 import ContentShell from "../../components/content/ContentShell";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { getAdaptiveOverview } from "../../services/adaptive.service";
+import { getAdaptiveOverview, updateStudyPlanActivity } from "../../services/adaptive.service";
 import { getResources } from "../../services/content.service";
-import type { AdaptiveOverview } from "../../types/adaptive.types";
+import type { AdaptiveOverview, PlanActivityStatus } from "../../types/adaptive.types";
 import type { EducationalResource } from "../../types/content.types";
 
 interface Props { onBack: () => void }
+
+interface AdaptiveResourceContext {
+  activityId: string;
+  activityTitle: string;
+  reason: string;
+  priorityScore: number;
+  status: PlanActivityStatus;
+}
 
 const Resources = ({ onBack }: Props) => {
   const navigate = useNavigate();
@@ -70,7 +78,7 @@ const Resources = ({ onBack }: Props) => {
   );
 
   const adaptiveResources = useMemo(() => {
-    const map = new Map<string, { reason: string; priorityScore: number; activityTitle: string }>();
+    const map = new Map<string, AdaptiveResourceContext>();
 
     for (const activity of overview?.plan ?? []) {
       const resource = activity.recommendation?.resource;
@@ -79,9 +87,11 @@ const Resources = ({ onBack }: Props) => {
       const current = map.get(resource.id);
       if (!current || activity.priorityScore > current.priorityScore) {
         map.set(resource.id, {
+          activityId: activity.id,
+          activityTitle: activity.title,
           reason: activity.reason,
           priorityScore: activity.priorityScore,
-          activityTitle: activity.title,
+          status: activity.status,
         });
       }
     }
@@ -105,6 +115,23 @@ const Resources = ({ onBack }: Props) => {
     }), [adaptiveResources, difficulty, resources, search, subjectId, type]);
 
   const recommendedCount = adaptiveResources.size;
+
+  const registerResourceStart = (context: AdaptiveResourceContext) => {
+    if (context.status !== "pending") return;
+
+    void updateStudyPlanActivity(context.activityId, { status: "in_progress" })
+      .then((updated) => {
+        setOverview((current) => current
+          ? {
+              ...current,
+              plan: current.plan.map((activity) => activity.id === updated.id ? updated : activity),
+            }
+          : current);
+      })
+      .catch(() => {
+        // Opening the educational material should not be blocked if progress tracking fails.
+      });
+  };
 
   return (
     <ContentShell
@@ -188,7 +215,9 @@ const Resources = ({ onBack }: Props) => {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-primary">{resource.resourceType}</p>
                     {adaptive && (
-                      <span className="prototype-badge prototype-badge-attention">Recomendado por tu plan</span>
+                      <span className="prototype-badge prototype-badge-attention">
+                        {adaptive.status === "in_progress" ? "En curso" : "Recomendado por tu plan"}
+                      </span>
                     )}
                   </div>
                   <span className="rounded-full bg-surface-muted px-3 py-1 text-xs text-muted">
@@ -218,6 +247,7 @@ const Resources = ({ onBack }: Props) => {
                     href={resource.url}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => adaptive && registerResourceStart(adaptive)}
                     className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"
                   >
                     Abrir recurso
