@@ -1,6 +1,7 @@
 import { apiRequest } from "./api-client";
 import type {
   AdaptiveOverview,
+  AdaptiveRiskHistoryEntry,
   EvaluationPayload,
   EvaluationSummary,
   StudyPlanActivity,
@@ -9,6 +10,13 @@ import type {
 
 export const getAdaptiveOverview = () =>
   apiRequest<AdaptiveOverview>("/adaptive-engine/overview");
+
+export const getAdaptiveHistory = (subjectId?: string, limit = 60) => {
+  const params = new URLSearchParams();
+  if (subjectId) params.set("subjectId", subjectId);
+  params.set("limit", String(limit));
+  return apiRequest<AdaptiveRiskHistoryEntry[]>(`/adaptive-engine/history?${params.toString()}`);
+};
 
 export const recalculateAdaptivePlan = () =>
   apiRequest<unknown>("/adaptive-engine/recalculate", { method: "POST" });
