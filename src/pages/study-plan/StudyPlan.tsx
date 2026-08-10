@@ -44,6 +44,17 @@ const activityLabel = (type: string) => {
   return labels[type] ?? "Actividad guiada";
 };
 
+const componentLabel = (key: string) => {
+  const labels: Record<string, string> = {
+    performance: "Rendimiento",
+    evaluationUrgency: "Evaluación",
+    inactivity: "Inactividad",
+    recentQuiz: "Quiz reciente",
+    difficulty: "Dificultad",
+  };
+  return labels[key] ?? key;
+};
+
 const StudyPlan = () => {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<StudyPlanActivity[]>([]);
@@ -135,13 +146,7 @@ const StudyPlan = () => {
         return;
       }
 
-      const resourceUrl = activity.recommendation?.resource?.url;
-      if (resourceUrl) {
-        window.open(resourceUrl, "_blank", "noopener,noreferrer");
-        return;
-      }
-
-      navigate("/study-sessions");
+      navigate(`/study-sessions?planActivityId=${encodeURIComponent(activity.id)}`);
     } catch (operationError) {
       window.alert(
         operationError instanceof Error
@@ -222,7 +227,7 @@ const StudyPlan = () => {
               <div className="mt-5 grid gap-2 sm:grid-cols-5">
                 {Object.entries(priority.components).map(([key, value]) => (
                   <div key={key} className="rounded-xl bg-surface-muted p-3">
-                    <span className="block text-[10px] uppercase tracking-[0.08em] text-muted">{key}</span>
+                    <span className="block text-[10px] uppercase tracking-[0.08em] text-muted">{componentLabel(key)}</span>
                     <strong className="mt-1 block text-lg text-content">{value}</strong>
                   </div>
                 ))}
@@ -302,6 +307,7 @@ const StudyPlan = () => {
                       <div className="mt-4 rounded-xl border border-border bg-surface-muted/50 p-3">
                         <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Recurso sugerido</span>
                         <strong className="mt-1 block text-sm text-content">{activity.recommendation.resource.title}</strong>
+                        <p className="mt-1 text-xs text-muted">El recurso aparecerá también dentro de la sesión guiada.</p>
                       </div>
                     )}
                   </div>
