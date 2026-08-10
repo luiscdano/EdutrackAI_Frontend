@@ -1,6 +1,7 @@
 import { apiRequest } from "./api-client";
 import type {
   AdaptiveOverview,
+  EvaluationPayload,
   EvaluationSummary,
   StudyPlanActivity,
   UpdatePlanActivityPayload,
@@ -29,5 +30,26 @@ export const updateStudyPlanActivity = (
     body: JSON.stringify(payload),
   });
 
+export const getEvaluations = () =>
+  apiRequest<EvaluationSummary[]>("/evaluations");
+
 export const getUpcomingEvaluations = () =>
   apiRequest<EvaluationSummary[]>("/evaluations/upcoming");
+
+export const createEvaluation = (payload: EvaluationPayload) =>
+  apiRequest<EvaluationSummary>("/evaluations", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const updateEvaluation = (
+  evaluationId: string,
+  payload: Partial<Omit<EvaluationPayload, "subjectId">>,
+) =>
+  apiRequest<EvaluationSummary>(`/evaluations/${evaluationId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const deactivateEvaluation = (evaluationId: string) =>
+  apiRequest<void>(`/evaluations/${evaluationId}`, { method: "DELETE" });
