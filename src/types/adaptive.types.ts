@@ -22,6 +22,37 @@ export interface AdaptiveRiskHistoryEntry extends AdaptiveRisk {
   };
 }
 
+export interface AdminAdaptiveStudentRisk {
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    studentCode: string;
+    email: string;
+  };
+  subject: {
+    id: string;
+    name: string;
+  };
+  score: number;
+  level: RiskLevel;
+  reasons: string[];
+  trigger: string;
+  evaluatedAt: string;
+}
+
+export interface AdminAdaptiveRiskOverview {
+  generatedAt: string;
+  totalTrackedStudents: number;
+  summary: {
+    high: number;
+    attention: number;
+    watch: number;
+    stable: number;
+  };
+  students: AdminAdaptiveStudentRisk[];
+}
+
 export interface StudyPlanActivity {
   id: string;
   engineKey?: string;
