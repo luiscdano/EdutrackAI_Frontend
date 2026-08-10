@@ -74,11 +74,28 @@ export interface EvaluationSummary {
   scheduledAt: string;
   weight: string | number | null;
   isActive: boolean;
+  createdAt?: string;
+  updateAt?: string;
   subject: {
     id: string;
     name: string;
     level: string;
   };
+  creator?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+export interface EvaluationPayload {
+  subjectId: string;
+  title: string;
+  description?: string;
+  evaluationType: string;
+  scheduledAt: string;
+  weight?: number;
+  isActive?: boolean;
 }
 
 export interface UpdatePlanActivityPayload {
