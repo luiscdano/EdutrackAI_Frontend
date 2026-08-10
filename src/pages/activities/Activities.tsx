@@ -105,38 +105,37 @@ const Activities = ({ userId, onBack }: ActivitiesProps) => {
   }, [loadData]);
 
   useEffect(() => {
-    if (!planActivityId) {
-      setPlannedActivity(null);
-      setPlanError(null);
-      return;
-    }
+    if (!planActivityId) return;
 
     let active = true;
-    setPlanLoading(true);
-    setPlanError(null);
+    const timeoutId = window.setTimeout(() => {
+      setPlanLoading(true);
+      setPlanError(null);
 
-    void getStudyPlanActivity(planActivityId)
-      .then((activity) => {
-        if (!active) return;
-        setPlannedActivity(activity);
-        setEditingSession(null);
-        setShowForm(true);
-      })
-      .catch((loadError) => {
-        if (!active) return;
-        setPlannedActivity(null);
-        setPlanError(
-          loadError instanceof Error
-            ? loadError.message
-            : "No fue posible abrir la actividad sugerida.",
-        );
-      })
-      .finally(() => {
-        if (active) setPlanLoading(false);
-      });
+      void getStudyPlanActivity(planActivityId)
+        .then((activity) => {
+          if (!active) return;
+          setPlannedActivity(activity);
+          setEditingSession(null);
+          setShowForm(true);
+        })
+        .catch((loadError) => {
+          if (!active) return;
+          setPlannedActivity(null);
+          setPlanError(
+            loadError instanceof Error
+              ? loadError.message
+              : "No fue posible abrir la actividad sugerida.",
+          );
+        })
+        .finally(() => {
+          if (active) setPlanLoading(false);
+        });
+    }, 0);
 
     return () => {
       active = false;
+      window.clearTimeout(timeoutId);
     };
   }, [planActivityId]);
 
