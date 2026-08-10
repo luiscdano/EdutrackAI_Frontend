@@ -26,6 +26,7 @@ const QuizAttempt = lazy(() => import("./pages/quizzes/QuizAttempt"));
 const QuizCatalog = lazy(() => import("./pages/quizzes/QuizCatalog"));
 const Recommendations = lazy(() => import("./pages/recommendations/Recommendations"));
 const Resources = lazy(() => import("./pages/resources/Resources"));
+const StudyPlan = lazy(() => import("./pages/study-plan/StudyPlan"));
 const Subjects = lazy(() => import("./pages/subjects/Subjects"));
 
 const RouteLoader = () => (
@@ -146,7 +147,8 @@ export default function App() {
               <Route path="subjects" element={<SubjectsRoute />} />
               <Route path="progress" element={<ProgressRoute />} />
               <Route path="study-sessions" element={<StudySessionsRoute />} />
-              <Route path="practices" element={<QuizCatalog />} />
+              <Route path="practices" element={<StudyPlan />} />
+              <Route path="quizzes" element={<QuizCatalog />} />
               <Route path="quizzes/attempts/:attemptId" element={<QuizAttempt />} />
               <Route path="resources" element={<ResourcesRoute />} />
               <Route path="recommendations" element={<RecommendationsRoute />} />
