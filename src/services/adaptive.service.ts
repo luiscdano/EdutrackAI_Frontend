@@ -18,6 +18,9 @@ export const getStudyPlan = (includeHistory = false) =>
     `/study-plan${includeHistory ? "?includeHistory=true" : ""}`,
   );
 
+export const getStudyPlanActivity = (activityId: string) =>
+  apiRequest<StudyPlanActivity>(`/study-plan/${activityId}`);
+
 export const regenerateStudyPlan = () =>
   apiRequest<StudyPlanActivity[]>("/study-plan/regenerate", { method: "POST" });
 
