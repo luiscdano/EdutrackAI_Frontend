@@ -1,9 +1,13 @@
+import { useEffect, useState } from "react";
+
 import PerformanceSection from "../../components/dashboard/PerformanceSection";
 import StreakSection from "../../components/dashboard/StreakSection";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Loader from "../../components/ui/Loader";
 import { useDashboardData } from "../../hooks/useDashboardData";
+import { getAdaptiveOverview } from "../../services/adaptive.service";
+import type { AdaptiveOverview } from "../../types/adaptive.types";
 
 interface Props {
   firstName: string;
@@ -27,6 +31,25 @@ const getGreeting = () => {
 
 const Dashboard = (props: Props) => {
   const { data, loading, error, load } = useDashboardData();
+  const [adaptive, setAdaptive] = useState<AdaptiveOverview | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const timeoutId = window.setTimeout(() => {
+      void getAdaptiveOverview()
+        .then((result) => {
+          if (active) setAdaptive(result);
+        })
+        .catch(() => {
+          if (active) setAdaptive(null);
+        });
+    }, 0);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -48,9 +71,11 @@ const Dashboard = (props: Props) => {
     );
   }
 
-  const prioritySubject = [...data.performance]
+  const fallbackPriority = [...data.performance]
     .filter((item) => item.grades.count > 0)
     .sort((a, b) => a.grades.average - b.grades.average)[0] ?? data.performance[0];
+  const adaptivePriority = adaptive?.priority ?? null;
+  const adaptiveActivity = adaptive?.plan[0] ?? null;
 
   const dateLabel = new Intl.DateTimeFormat("es-DO", {
     weekday: "long",
@@ -100,40 +125,49 @@ const Dashboard = (props: Props) => {
               <span className="prototype-eyebrow">Tu próximo paso</span>
               <h3 className="mt-1 text-lg font-bold text-content">Una actividad concreta para comenzar</h3>
             </div>
-            <span className="prototype-badge prototype-badge-attention">Prioridad sugerida</span>
+            <span className="prototype-badge prototype-badge-attention">
+              {adaptivePriority ? `Riesgo ${adaptivePriority.score}/100` : "Prioridad sugerida"}
+            </span>
           </div>
 
           <div className="mt-5 border-t border-border pt-5">
             <span className="prototype-badge">
-              {prioritySubject?.subject.level ?? "Plan académico"}
+              {adaptiveActivity?.subject.name ?? fallbackPriority?.subject.level ?? "Plan académico"}
             </span>
             <h4 className="mt-3 max-w-3xl text-2xl font-bold leading-tight tracking-[-0.025em] text-content">
-              {prioritySubject
-                ? `Refuerza ${prioritySubject.subject.name} con una práctica corta.`
-                : "Realiza una práctica para mantener activo tu progreso."}
+              {adaptiveActivity?.title
+                ?? (fallbackPriority
+                  ? `Refuerza ${fallbackPriority.subject.name} con una práctica corta.`
+                  : "Realiza una práctica para mantener activo tu progreso.")}
             </h4>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-              {prioritySubject
-                ? `Tu promedio registrado es ${prioritySubject.grades.average.toFixed(1)}. Una sesión enfocada te ayudará a detectar qué tema necesita más atención.`
-                : "Aún no hay suficiente información para seleccionar una materia prioritaria. Comienza una práctica y construiremos una recomendación más precisa."}
+              {adaptiveActivity?.reason
+                ?? (fallbackPriority
+                  ? `Tu promedio registrado es ${fallbackPriority.grades.average.toFixed(1)}. Una sesión enfocada te ayudará a detectar qué tema necesita más atención.`
+                  : "Aún no hay suficiente información para seleccionar una materia prioritaria. Comienza una práctica y construiremos una recomendación más precisa.")}
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <span className="rounded-lg bg-surface-muted px-2.5 py-2 text-[11px] font-medium text-muted">
-                15–25 minutos
+                {adaptiveActivity ? `${adaptiveActivity.durationMinutes} minutos` : "15–25 minutos"}
               </span>
               <span className="rounded-lg bg-surface-muted px-2.5 py-2 text-[11px] font-medium text-muted">
-                Enfoque guiado
+                {adaptiveActivity ? adaptiveActivity.activityType.replaceAll("_", " ") : "Enfoque guiado"}
               </span>
-              {prioritySubject && (
+              {adaptiveActivity?.topic && (
                 <span className="rounded-lg bg-surface-muted px-2.5 py-2 text-[11px] font-medium text-muted">
-                  {prioritySubject.grades.count} calificaciones
+                  Tema: {adaptiveActivity.topic}
+                </span>
+              )}
+              {!adaptiveActivity && fallbackPriority && (
+                <span className="rounded-lg bg-surface-muted px-2.5 py-2 text-[11px] font-medium text-muted">
+                  {fallbackPriority.grades.count} calificaciones
                 </span>
               )}
             </div>
 
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button onClick={props.onOpenPractices}>Comenzar práctica</Button>
+              <Button onClick={props.onOpenPractices}>{adaptiveActivity ? "Ir a mi plan" : "Crear mi plan"}</Button>
               <Button variant="secondary" onClick={props.onOpenRecommendations}>Ver recomendaciones</Button>
             </div>
           </div>
@@ -163,6 +197,18 @@ const Dashboard = (props: Props) => {
 
             <button
               type="button"
+              onClick={props.onOpenPractices}
+              className="flex w-full items-center justify-between gap-3 rounded-xl bg-surface-muted p-3 text-left transition hover:bg-primary/10"
+            >
+              <span>
+                <strong className="block text-xs text-content">Plan adaptativo</strong>
+                <small className="mt-1 block text-[10px] text-muted">Actividades pendientes generadas por tus resultados</small>
+              </span>
+              <span className="text-lg font-bold text-primary">{adaptive?.plan.length ?? 0}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={props.onOpenStudySessions}
               className="flex w-full items-center justify-between gap-3 rounded-xl bg-surface-muted p-3 text-left transition hover:bg-primary/10"
             >
@@ -171,18 +217,6 @@ const Dashboard = (props: Props) => {
                 <small className="mt-1 block text-[10px] text-muted">Registra tiempo y productividad</small>
               </span>
               <span className="text-lg font-bold text-success">{data.summary.averageProductivity.toFixed(1)}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={props.onOpenProgress}
-              className="flex w-full items-center justify-between gap-3 rounded-xl bg-surface-muted p-3 text-left transition hover:bg-primary/10"
-            >
-              <span>
-                <strong className="block text-xs text-content">Actividad reciente</strong>
-                <small className="mt-1 block text-[10px] text-muted">{data.streak.activeDaysLast30} días activos este mes</small>
-              </span>
-              <span className="text-lg font-bold text-primary">↗</span>
             </button>
           </div>
         </aside>
