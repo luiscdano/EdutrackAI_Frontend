@@ -9,21 +9,46 @@ import { useNavigate } from "react-router-dom";
 import ContentShell from "../../components/content/ContentShell";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { getAdaptiveOverview } from "../../services/adaptive.service";
+import { getAdaptiveHistory, getAdaptiveOverview } from "../../services/adaptive.service";
 import { getGrades } from "../../services/content.service";
-import type { AdaptiveOverview, AdaptiveRisk, RiskLevel } from "../../types/adaptive.types";
+import type {
+  AdaptiveOverview,
+  AdaptiveRisk,
+  AdaptiveRiskHistoryEntry,
+  RiskLevel,
+} from "../../types/adaptive.types";
 import type { AcademicGrade } from "../../types/content.types";
 
 interface Props { onBack: () => void }
 
 const scoreOf = (grade: AcademicGrade) => Number(grade.gradeValue) || 0;
 const formatDate = (value: string) => new Date(value).toLocaleDateString("es-DO");
+const formatMoment = (value: string) => new Date(value).toLocaleString("es-DO", {
+  day: "2-digit",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+});
 
 const riskLabel = (level: RiskLevel) => {
   if (level === "high") return "Prioridad alta";
   if (level === "attention") return "Necesita atención";
   if (level === "watch") return "En observación";
   return "Estable";
+};
+
+const triggerLabel = (trigger: string) => {
+  const labels: Record<string, string> = {
+    manual: "Recalculado manualmente",
+    daily_scheduler: "Revisión periódica",
+    grade_created: "Nueva calificación",
+    grade_updated: "Calificación actualizada",
+    quiz_finished: "Quiz completado",
+    study_session_saved: "Sesión registrada",
+    plan_activity_completed: "Actividad completada",
+    evaluation_changed: "Evaluación actualizada",
+  };
+  return labels[trigger] ?? trigger.replaceAll("_", " ");
 };
 
 const componentLabel = (key: string) => {
@@ -68,6 +93,7 @@ const Progress = ({ onBack }: Props) => {
   const navigate = useNavigate();
   const [grades, setGrades] = useState<AcademicGrade[]>([]);
   const [overview, setOverview] = useState<AdaptiveOverview | null>(null);
+  const [history, setHistory] = useState<AdaptiveRiskHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -79,13 +105,15 @@ const Progress = ({ onBack }: Props) => {
     setError(null);
 
     try {
-      const [gradeData, adaptiveData] = await Promise.all([
+      const [gradeData, adaptiveData, historyData] = await Promise.all([
         getGrades(),
         getAdaptiveOverview().catch(() => null),
+        getAdaptiveHistory(undefined, 100).catch(() => []),
       ]);
 
       setGrades(gradeData);
       setOverview(adaptiveData);
+      setHistory(historyData);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -127,6 +155,28 @@ const Progress = ({ onBack }: Props) => {
     if (subjectId === "all") return overview.priority;
     return overview.risks.find((risk) => risk.subjectId === subjectId) ?? null;
   }, [overview, subjectId]);
+
+  const selectedHistory = useMemo(() => {
+    const targetSubjectId = subjectId === "all" ? selectedRisk?.subjectId : subjectId;
+    if (!targetSubjectId) return [];
+
+    return history
+      .filter((entry) => entry.subjectId === targetSubjectId)
+      .sort((a, b) => new Date(a.evaluatedAt).getTime() - new Date(b.evaluatedAt).getTime())
+      .slice(-8);
+  }, [history, selectedRisk?.subjectId, subjectId]);
+
+  const riskEvolution = useMemo(() => {
+    if (selectedHistory.length < 2) return null;
+    const first = selectedHistory[0].score;
+    const latest = selectedHistory[selectedHistory.length - 1].score;
+    const delta = latest - first;
+
+    return {
+      delta,
+      label: delta < 0 ? "El riesgo está bajando" : delta > 0 ? "El riesgo está subiendo" : "El riesgo se mantiene",
+    };
+  }, [selectedHistory]);
 
   const subjectSummaries = useMemo(() => {
     const bySubject = new Map<string, AcademicGrade[]>();
@@ -242,6 +292,49 @@ const Progress = ({ onBack }: Props) => {
               </div>
               <Button className="mt-4 w-full" onClick={() => navigate("/practices")}>Ver acción recomendada</Button>
             </div>
+          </div>
+        </Card>
+      )}
+
+      {selectedHistory.length > 0 && (
+        <Card padding="lg">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="prototype-eyebrow">Evolución adaptativa</span>
+              <h2 className="mt-1 text-xl font-bold text-content">Cómo ha cambiado el riesgo</h2>
+              <p className="mt-2 text-sm text-muted">
+                Cada punto representa una evaluación del motor provocada por una nota, quiz, sesión, evaluación o recálculo.
+              </p>
+            </div>
+            {riskEvolution && (
+              <div className="rounded-xl bg-surface-muted px-4 py-3 text-right">
+                <strong className="block text-sm text-content">{riskEvolution.label}</strong>
+                <span className="text-xs text-muted">
+                  {riskEvolution.delta > 0 ? "+" : ""}{riskEvolution.delta} puntos en el periodo visible
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            {selectedHistory.map((entry) => (
+              <div key={entry.id} className="grid gap-2 md:grid-cols-[170px_1fr_90px] md:items-center">
+                <div>
+                  <p className="text-xs font-semibold text-content">{formatMoment(entry.evaluatedAt)}</p>
+                  <p className="mt-0.5 text-[11px] text-muted">{triggerLabel(entry.trigger)}</p>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-surface-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${Math.max(3, Math.min(100, entry.score))}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2 md:justify-end">
+                  <strong className="text-sm text-content">{entry.score}/100</strong>
+                  <span className="text-[10px] font-semibold text-primary">{riskLabel(entry.level)}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       )}
