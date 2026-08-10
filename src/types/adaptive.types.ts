@@ -14,6 +14,14 @@ export interface AdaptiveRisk {
   };
 }
 
+export interface AdaptiveRiskHistoryEntry extends AdaptiveRisk {
+  id: string;
+  subject: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface StudyPlanActivity {
   id: string;
   engineKey?: string;
