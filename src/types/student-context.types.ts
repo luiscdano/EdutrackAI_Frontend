@@ -75,6 +75,35 @@ export interface CustomSubjectPayload {
   difficultyLevel?: "low" | "medium" | "high";
 }
 
+export type StudentAcademicItemType = "deadline" | "material" | "note";
+
+export interface StudentAcademicItem {
+  id: string;
+  itemType: StudentAcademicItemType;
+  title: string;
+  description: string | null;
+  topic: string | null;
+  url: string | null;
+  scheduledAt: string | null;
+  createdAt: string;
+  updateAt: string;
+  subject: {
+    id: string;
+    name: string;
+    level: string;
+  };
+}
+
+export interface CreateStudentAcademicItemPayload {
+  subjectId: string;
+  itemType: StudentAcademicItemType;
+  title: string;
+  description?: string;
+  topic?: string;
+  url?: string;
+  scheduledAt?: string;
+}
+
 export interface LearningResource {
   id: string;
   title: string;
@@ -84,7 +113,7 @@ export interface LearningResource {
   resourceType: string;
   topic: string;
   difficulty: string;
-  sourceKind: "course_resource" | "provider_search";
+  sourceKind: "student_material" | "course_resource" | "provider_search";
   verifiedProvider: boolean;
 }
 
