@@ -19,6 +19,16 @@ export const applyAcademicCatalog = (payload: ApplyCatalogPayload) =>
     body: JSON.stringify(payload),
   });
 
+export const saveCustomAcademicContext = (payload: {
+  institutionName: string;
+  programName: string;
+  currentPeriod: number;
+}) =>
+  apiRequest<StudentContextOverview>("/student-context/custom", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
 export const addCustomSubject = (payload: CustomSubjectPayload) =>
   apiRequest<StudentSubjectAssignment>("/student-context/subjects/custom", {
     method: "POST",
