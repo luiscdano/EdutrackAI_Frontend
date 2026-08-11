@@ -66,9 +66,10 @@ const QuickCapture = () => {
         if (!active) return;
         const current = context.subjects.filter((item) => item.status === "active");
         setSubjects(current);
-        if (!subjectId || !current.some((item) => item.subject.id === subjectId)) {
-          setSubjectId(current[0]?.subject.id ?? "");
-        }
+        const preferred = initialSubjectId && current.some((item) => item.subject.id === initialSubjectId)
+          ? initialSubjectId
+          : current[0]?.subject.id ?? "";
+        setSubjectId(preferred);
       })
       .catch((loadError) => {
         if (active) setError(loadError instanceof Error ? loadError.message : "No pude cargar tus materias.");
@@ -80,7 +81,7 @@ const QuickCapture = () => {
     return () => {
       active = false;
     };
-  }, [subjectId]);
+  }, [initialSubjectId]);
 
   if (isAdmin) return <Navigate to="/admin" replace />;
 
@@ -195,7 +196,7 @@ const QuickCapture = () => {
                 <label className="grid gap-2 text-sm font-semibold">
                   Tipo
                   <select value={gradeType} onChange={(event) => setGradeType(event.target.value)} className="min-h-12 rounded-control border border-border bg-app-bg px-3 text-content outline-none focus:border-primary">
-                    {['Tarea', 'Quiz', 'Parcial', 'Examen', 'Proyecto', 'Práctica', 'Otro'].map((value) => <option key={value}>{value}</option>)}
+                    {["Tarea", "Quiz", "Parcial", "Examen", "Proyecto", "Práctica", "Otro"].map((value) => <option key={value}>{value}</option>)}
                   </select>
                 </label>
                 <label className="grid gap-2 text-sm font-semibold sm:col-span-2">
