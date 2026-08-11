@@ -17,21 +17,22 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminQuizzes = lazy(() => import("./pages/admin/AdminQuizzes"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const Activities = lazy(() => import("./pages/activities/Activities"));
-const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
 const DesignSystem = lazy(() => import("./pages/design-system/DesignSystem"));
+const FocusSession = lazy(() => import("./pages/focus/FocusSession"));
+const StudentHome = lazy(() => import("./pages/home/StudentHome"));
 const Notifications = lazy(() => import("./pages/notifications/Notifications"));
+const StudentOnboarding = lazy(() => import("./pages/onboarding/StudentOnboarding"));
+const PracticeHub = lazy(() => import("./pages/practice/PracticeHub"));
 const Profile = lazy(() => import("./pages/profile/Profile"));
 const Progress = lazy(() => import("./pages/progress/Progress"));
 const QuizAttempt = lazy(() => import("./pages/quizzes/QuizAttempt"));
-const QuizCatalog = lazy(() => import("./pages/quizzes/QuizCatalog"));
 const Recommendations = lazy(() => import("./pages/recommendations/Recommendations"));
 const Resources = lazy(() => import("./pages/resources/Resources"));
-const StudyPlan = lazy(() => import("./pages/study-plan/StudyPlan"));
 const Subjects = lazy(() => import("./pages/subjects/Subjects"));
 
 const RouteLoader = () => (
   <div className="flex min-h-[50vh] items-center justify-center">
-    <Loader size="lg" showLabel label="Cargando pantalla..." />
+    <Loader size="lg" showLabel label="Cargando..." />
   </div>
 );
 
@@ -51,31 +52,15 @@ const RegisterRoute = () => {
 
   return <Register onRegisterSuccess={(user) => {
     completeAuthentication(user);
-    navigate("/", { replace: true });
+    navigate("/onboarding", { replace: true });
   }} />;
 };
 
-const StudentDashboardRoute = () => {
+const StudentHomeRoute = () => {
   const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
-
   if (!user) return null;
   if (isAdmin) return <Navigate to="/admin" replace />;
-
-  return (
-    <Dashboard
-      firstName={user.firstName}
-      onOpenAccount={() => navigate("/profile")}
-      onOpenSubjects={() => navigate("/subjects")}
-      onOpenProgress={() => navigate("/progress")}
-      onOpenResources={() => navigate("/resources")}
-      onOpenRecommendations={() => navigate("/recommendations")}
-      onOpenNotifications={() => navigate("/notifications")}
-      onOpenAcademicProfile={() => navigate("/academic-setup")}
-      onOpenStudySessions={() => navigate("/study-sessions")}
-      onOpenPractices={() => navigate("/practices")}
-    />
-  );
+  return <StudentHome />;
 };
 
 const ProfileRoute = () => {
@@ -141,18 +126,23 @@ export default function App() {
           <Route path="/403" element={<ForbiddenPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="onboarding" element={<StudentOnboarding />} />
+            <Route path="focus/:activityId" element={<FocusSession />} />
+
             <Route element={<AppLayout />}>
-              <Route index element={<StudentDashboardRoute />} />
-              <Route path="profile" element={<ProfileRoute />} />
+              <Route index element={<StudentHomeRoute />} />
+              <Route path="practice" element={<PracticeHub />} />
+              <Route path="practices" element={<Navigate to="/practice" replace />} />
+              <Route path="quizzes" element={<Navigate to="/practice" replace />} />
+              <Route path="quizzes/attempts/:attemptId" element={<QuizAttempt />} />
               <Route path="subjects" element={<SubjectsRoute />} />
               <Route path="progress" element={<ProgressRoute />} />
-              <Route path="study-sessions" element={<StudySessionsRoute />} />
-              <Route path="practices" element={<StudyPlan />} />
-              <Route path="quizzes" element={<QuizCatalog />} />
-              <Route path="quizzes/attempts/:attemptId" element={<QuizAttempt />} />
               <Route path="resources" element={<ResourcesRoute />} />
-              <Route path="recommendations" element={<RecommendationsRoute />} />
+
+              <Route path="profile" element={<ProfileRoute />} />
               <Route path="notifications" element={<NotificationsRoute />} />
+              <Route path="recommendations" element={<RecommendationsRoute />} />
+              <Route path="study-sessions" element={<StudySessionsRoute />} />
               <Route path="academic-setup" element={<AcademicSetupRoute />} />
 
               <Route element={<AdminRoute />}>
