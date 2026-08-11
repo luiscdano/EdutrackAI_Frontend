@@ -16,9 +16,11 @@ interface Props { onBack: () => void }
 const Resources = ({ onBack }: Props) => {
   const navigate = useNavigate();
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
+  const initialSubjectId = params.get("subject") ?? "";
+  const initialTopic = params.get("topic") ?? "";
   const [subjects, setSubjects] = useState<StudentSubjectAssignment[]>([]);
-  const [subjectId, setSubjectId] = useState(params.get("subject") ?? "");
-  const [topic, setTopic] = useState(params.get("topic") ?? "");
+  const [subjectId, setSubjectId] = useState(initialSubjectId);
+  const [topic, setTopic] = useState(initialTopic);
   const [discovery, setDiscovery] = useState<LearningResourceDiscovery | null>(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -46,12 +48,12 @@ const Resources = ({ onBack }: Props) => {
         if (!active) return;
         const current = context.subjects.filter((item) => item.status === "active");
         setSubjects(current);
-        const initial = subjectId && current.some((item) => item.subject.id === subjectId)
-          ? subjectId
+        const initial = initialSubjectId && current.some((item) => item.subject.id === initialSubjectId)
+          ? initialSubjectId
           : current[0]?.subject.id ?? "";
         setSubjectId(initial);
         if (initial) {
-          const result = await discoverLearningResources(initial, topic.trim() || undefined);
+          const result = await discoverLearningResources(initial, initialTopic.trim() || undefined);
           if (active) setDiscovery(result);
         }
       } catch (loadError) {
@@ -62,7 +64,7 @@ const Resources = ({ onBack }: Props) => {
     };
     void load();
     return () => { active = false; };
-  }, []);
+  }, [initialSubjectId, initialTopic]);
 
   return (
     <ContentShell
