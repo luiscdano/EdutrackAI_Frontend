@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import Loader from "./components/ui/Loader";
@@ -114,6 +114,16 @@ const AdminDashboardRoute = () => {
 };
 
 export default function App() {
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("edutrack-theme");
+    const theme = savedTheme === "light" || savedTheme === "dark"
+      ? savedTheme
+      : window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    document.documentElement.dataset.theme = theme;
+  }, []);
+
   return (
     <Suspense fallback={<RouteLoader />}>
       <Routes>
