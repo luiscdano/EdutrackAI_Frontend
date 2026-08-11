@@ -4,262 +4,150 @@ import { useNavigate } from "react-router-dom";
 import ContentShell from "../../components/content/ContentShell";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { getAdaptiveOverview, updateStudyPlanActivity } from "../../services/adaptive.service";
-import { getResources } from "../../services/content.service";
-import type { AdaptiveOverview, PlanActivityStatus } from "../../types/adaptive.types";
-import type { EducationalResource } from "../../types/content.types";
+import { discoverLearningResources } from "../../services/learning-resources.service";
+import { getStudentContext } from "../../services/student-context.service";
+import type {
+  LearningResourceDiscovery,
+  StudentSubjectAssignment,
+} from "../../types/student-context.types";
 
 interface Props { onBack: () => void }
 
-interface AdaptiveResourceContext {
-  activityId: string;
-  activityTitle: string;
-  reason: string;
-  priorityScore: number;
-  status: PlanActivityStatus;
-}
-
 const Resources = ({ onBack }: Props) => {
   const navigate = useNavigate();
-  const [resources, setResources] = useState<EducationalResource[]>([]);
-  const [overview, setOverview] = useState<AdaptiveOverview | null>(null);
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
+  const [subjects, setSubjects] = useState<StudentSubjectAssignment[]>([]);
+  const [subjectId, setSubjectId] = useState(params.get("subject") ?? "");
+  const [topic, setTopic] = useState(params.get("topic") ?? "");
+  const [discovery, setDiscovery] = useState<LearningResourceDiscovery | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const initialSubject = new URLSearchParams(window.location.search).get("subject") ?? "all";
-  const [subjectId, setSubjectId] = useState(initialSubject);
-  const [type, setType] = useState("all");
-  const [difficulty, setDifficulty] = useState("all");
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const discover = useCallback(async (nextSubjectId: string, nextTopic = topic) => {
+    if (!nextSubjectId) return;
+    setSearching(true);
     setError(null);
-
     try {
-      const [resourceData, adaptiveData] = await Promise.all([
-        getResources(),
-        getAdaptiveOverview().catch(() => null),
-      ]);
-
-      setResources(resourceData.filter((resource) => resource.isActive));
-      setOverview(adaptiveData);
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "No fue posible cargar los recursos.",
-      );
+      setDiscovery(await discoverLearningResources(nextSubjectId, nextTopic.trim() || undefined));
+    } catch (discoverError) {
+      setError(discoverError instanceof Error ? discoverError.message : "No pude buscar recursos.");
     } finally {
-      setLoading(false);
+      setSearching(false);
     }
-  }, []);
+  }, [topic]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void load();
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [load]);
-
-  const subjects = useMemo(
-    () => Array.from(
-      new Map(resources.map((resource) => [resource.subject.id, resource.subject])).values(),
-    ),
-    [resources],
-  );
-  const types = useMemo(
-    () => Array.from(new Set(resources.map((resource) => resource.resourceType))).sort(),
-    [resources],
-  );
-  const difficulties = useMemo(
-    () => Array.from(new Set(resources.map((resource) => resource.difficulty))).sort(),
-    [resources],
-  );
-
-  const adaptiveResources = useMemo(() => {
-    const map = new Map<string, AdaptiveResourceContext>();
-
-    for (const activity of overview?.plan ?? []) {
-      const resource = activity.recommendation?.resource;
-      if (!resource) continue;
-
-      const current = map.get(resource.id);
-      if (!current || activity.priorityScore > current.priorityScore) {
-        map.set(resource.id, {
-          activityId: activity.id,
-          activityTitle: activity.title,
-          reason: activity.reason,
-          priorityScore: activity.priorityScore,
-          status: activity.status,
-        });
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const context = await getStudentContext();
+        if (!active) return;
+        const current = context.subjects.filter((item) => item.status === "active");
+        setSubjects(current);
+        const initial = subjectId && current.some((item) => item.subject.id === subjectId)
+          ? subjectId
+          : current[0]?.subject.id ?? "";
+        setSubjectId(initial);
+        if (initial) {
+          const result = await discoverLearningResources(initial, topic.trim() || undefined);
+          if (active) setDiscovery(result);
+        }
+      } catch (loadError) {
+        if (active) setError(loadError instanceof Error ? loadError.message : "No pude cargar tus recursos.");
+      } finally {
+        if (active) setLoading(false);
       }
-    }
-
-    return map;
-  }, [overview]);
-
-  const filtered = useMemo(() => resources
-    .filter((resource) => {
-      const text = `${resource.title} ${resource.description} ${resource.topic} ${resource.subject.name}`.toLowerCase();
-      return text.includes(search.trim().toLowerCase())
-        && (subjectId === "all" || resource.subject.id === subjectId)
-        && (type === "all" || resource.resourceType === type)
-        && (difficulty === "all" || resource.difficulty === difficulty);
-    })
-    .sort((a, b) => {
-      const aPriority = adaptiveResources.get(a.id)?.priorityScore ?? -1;
-      const bPriority = adaptiveResources.get(b.id)?.priorityScore ?? -1;
-      if (bPriority !== aPriority) return bPriority - aPriority;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }), [adaptiveResources, difficulty, resources, search, subjectId, type]);
-
-  const recommendedCount = adaptiveResources.size;
-
-  const registerResourceStart = (context: AdaptiveResourceContext) => {
-    if (context.status !== "pending") return;
-
-    void updateStudyPlanActivity(context.activityId, { status: "in_progress" })
-      .then((updated) => {
-        setOverview((current) => current
-          ? {
-              ...current,
-              plan: current.plan.map((activity) => activity.id === updated.id ? updated : activity),
-            }
-          : current);
-      })
-      .catch(() => {
-        // Opening the educational material should not be blocked if progress tracking fails.
-      });
-  };
+    };
+    void load();
+    return () => { active = false; };
+  }, []);
 
   return (
     <ContentShell
-      title="Biblioteca de recursos"
-      description="Explora materiales por materia y encuentra primero los recursos que EduTrack relacionó con tu plan actual."
+      title="Recursos"
+      description="Material para tus materias actuales, con la fuente visible antes de abrirlo."
       onBack={onBack}
       loading={loading}
       error={error}
-      onRetry={() => void load()}
-      actions={<Button variant="outline" onClick={() => navigate("/practices")}>Ver Mi plan</Button>}
+      onRetry={() => subjectId && void discover(subjectId)}
+      actions={<Button variant="outline" onClick={() => navigate("/subjects")}>Mis materias</Button>}
     >
-      {recommendedCount > 0 && (
-        <Card padding="lg" className="prototype-priority">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <span className="prototype-eyebrow">Selección adaptativa</span>
-              <h2 className="mt-1 text-xl font-bold text-content">
-                {recommendedCount} {recommendedCount === 1 ? "recurso está" : "recursos están"} conectado{recommendedCount === 1 ? "" : "s"} con tu plan
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-                Los materiales recomendados aparecen primero porque están relacionados con una materia o actividad que necesita atención ahora.
-              </p>
-            </div>
-            <Button onClick={() => navigate("/practices")}>Revisar prioridad</Button>
-          </div>
-        </Card>
-      )}
-
-      <Card padding="md">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar recurso o tema"
-            className="rounded-control border border-border bg-app-bg px-4 py-3 text-content outline-none focus:border-primary"
-          />
-          <select
-            value={subjectId}
-            onChange={(event) => setSubjectId(event.target.value)}
-            className="rounded-control border border-border bg-app-bg px-4 py-3 text-content"
-          >
-            <option value="all">Todas las materias</option>
-            {subjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
-          </select>
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value)}
-            className="rounded-control border border-border bg-app-bg px-4 py-3 text-content"
-          >
-            <option value="all">Todos los tipos</option>
-            {types.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <select
-            value={difficulty}
-            onChange={(event) => setDifficulty(event.target.value)}
-            className="rounded-control border border-border bg-app-bg px-4 py-3 text-content"
-          >
-            <option value="all">Toda dificultad</option>
-            {difficulties.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-        </div>
-      </Card>
-
-      {filtered.length === 0 ? (
+      {subjects.length === 0 ? (
         <Card padding="lg" className="text-center">
-          <h2 className="text-xl font-bold text-content">No hay recursos</h2>
-          <p className="mt-2 text-muted">No se encontraron materiales para los filtros seleccionados.</p>
+          <h2 className="text-xl font-bold text-content">Primero necesito saber qué materias cursas</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">Así evitamos mostrarte una biblioteca enorme que no tiene nada que ver contigo.</p>
+          <Button className="mt-5" onClick={() => navigate("/onboarding")}>Configurar materias</Button>
         </Card>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((resource) => {
-            const adaptive = adaptiveResources.get(resource.id);
-
-            return (
-              <Card
-                key={resource.id}
-                padding="md"
-                className={adaptive ? "prototype-priority" : ""}
+        <>
+          <Card padding="md">
+            <div className="grid gap-3 lg:grid-cols-[260px_1fr_auto]">
+              <select
+                value={subjectId}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setSubjectId(next);
+                  void discover(next);
+                }}
+                className="min-h-11 rounded-control border border-border bg-app-bg px-3 text-sm text-content outline-none focus:border-primary"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-primary">{resource.resourceType}</p>
-                    {adaptive && (
-                      <span className="prototype-badge prototype-badge-attention">
-                        {adaptive.status === "in_progress" ? "En curso" : "Recomendado por tu plan"}
-                      </span>
-                    )}
-                  </div>
-                  <span className="rounded-full bg-surface-muted px-3 py-1 text-xs text-muted">
-                    {resource.difficulty}
-                  </span>
+                {subjects.map((assignment) => (
+                  <option key={assignment.id} value={assignment.subject.id}>{assignment.subject.name}</option>
+                ))}
+              </select>
+              <input
+                value={topic}
+                onChange={(event) => setTopic(event.target.value)}
+                onKeyDown={(event) => { if (event.key === "Enter") void discover(subjectId); }}
+                placeholder="Tema específico, ej. Normalización, derivadas, arrays..."
+                className="min-h-11 rounded-control border border-border bg-app-bg px-4 text-sm text-content outline-none focus:border-primary"
+              />
+              <Button loading={searching} onClick={() => void discover(subjectId)}>Buscar</Button>
+            </div>
+          </Card>
+
+          {discovery && (
+            <section>
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <span className="prototype-eyebrow">{discovery.subject.name}</span>
+                  <h2 className="mt-1 text-xl font-bold text-content">{discovery.topic ? `Recursos para ${discovery.topic}` : "Fuentes para empezar"}</h2>
                 </div>
+                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">Fuentes visibles</span>
+              </div>
 
-                <h2 className="mt-2 text-xl font-bold text-content">{resource.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted">{resource.description}</p>
-
-                <div className="mt-4 text-sm">
-                  <p className="text-content">{resource.subject.name}</p>
-                  <p className="text-muted">Tema: {resource.topic}</p>
+              {discovery.resources.length === 0 ? (
+                <Card padding="lg" className="text-center"><p className="text-sm text-muted">No encontré recursos para este tema todavía.</p></Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {discovery.resources.map((resource) => (
+                    <a key={resource.id} href={resource.url} target="_blank" rel="noreferrer" className="group block">
+                      <Card padding="md" className="h-full transition group-hover:-translate-y-0.5 group-hover:border-primary/35">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <span className="text-xs font-bold text-primary">{resource.provider}</span>
+                            <span className="mt-1 block text-[10px] uppercase tracking-[0.08em] text-muted">{resource.resourceType}</span>
+                          </div>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${resource.verifiedProvider ? "bg-primary/10 text-primary" : "bg-surface-muted text-muted"}`}>
+                            {resource.verifiedProvider ? "Proveedor real" : "Recurso del curso"}
+                          </span>
+                        </div>
+                        <h3 className="mt-4 text-lg font-bold leading-6 text-content">{resource.title}</h3>
+                        <p className="mt-2 text-sm leading-6 text-muted">{resource.description}</p>
+                        <div className="mt-5 flex items-center justify-between gap-3 text-xs text-muted">
+                          <span>{resource.difficulty}</span>
+                          <span className="font-semibold text-primary">Abrir ↗</span>
+                        </div>
+                      </Card>
+                    </a>
+                  ))}
                 </div>
-
-                {adaptive && (
-                  <div className="mt-4 rounded-xl bg-surface-muted p-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.08em] text-primary">
-                      Relacionado con: {adaptive.activityTitle}
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-muted">{adaptive.reason}</p>
-                  </div>
-                )}
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <a
-                    href={resource.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => adaptive && registerResourceStart(adaptive)}
-                    className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"
-                  >
-                    Abrir recurso
-                  </a>
-                  {adaptive && (
-                    <Button variant="outline" onClick={() => navigate("/practices")}>Ver actividad</Button>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+              )}
+            </section>
+          )}
+        </>
       )}
     </ContentShell>
   );
