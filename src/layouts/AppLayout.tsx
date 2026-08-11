@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
-type IconName = "home" | "practice" | "book" | "chart" | "bell" | "profile" | "users" | "settings" | "quiz" | "resource" | "audit" | "logout" | "sun" | "moon";
+type IconName = "home" | "practice" | "book" | "chart" | "plus" | "bell" | "profile" | "users" | "settings" | "quiz" | "resource" | "audit" | "logout" | "sun" | "moon";
 type Theme = "light" | "dark";
 
 interface NavItem {
@@ -19,6 +19,7 @@ const Icon = ({ name }: { name: IconName }) => {
     practice: "M8 4h8l2 4v8l-4 4h-4l-4-4V8l2-4Zm1 6h6m-3-3v6m-2 4h4",
     book: "M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Zm16 0A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z",
     chart: "M4 19V9m6 10V5m6 14v-7m4 7H2",
+    plus: "M12 5v14M5 12h14",
     bell: "M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Zm-8 12h4",
     profile: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 9a7 7 0 0 0-14 0",
     users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87",
@@ -64,6 +65,7 @@ const routeTitle = (path: string) => {
     ["/admin", "Administración"],
     ["/quizzes/attempts", "Práctica"],
     ["/practice", "Practicar"],
+    ["/capture", "Añadir"],
     ["/subjects", "Materias"],
     ["/progress", "Progreso"],
     ["/resources", "Recursos"],
@@ -161,6 +163,11 @@ const AppLayout = () => {
           </div>
 
           <div className="flex items-center gap-1.5">
+            {!isAdmin && (
+              <button type="button" onClick={() => navigate("/capture")} className="flex h-10 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-white transition hover:bg-primary-hover" aria-label="Añadir nota, fecha o material">
+                <Icon name="plus" /> <span className="hidden sm:inline">Añadir</span>
+              </button>
+            )}
             <button type="button" onClick={() => setTheme((current) => current === "light" ? "dark" : "light")} className="grid h-10 w-10 place-items-center rounded-xl text-muted transition hover:bg-surface-muted hover:text-content" aria-label="Cambiar tema">
               <Icon name={theme === "light" ? "moon" : "sun"} />
             </button>
