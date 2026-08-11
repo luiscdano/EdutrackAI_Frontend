@@ -13,6 +13,12 @@ import type {
 
 interface Props { onBack: () => void }
 
+const sourceLabel = (sourceKind: string, verifiedProvider: boolean) => {
+  if (sourceKind === "student_material") return "Tu material";
+  if (verifiedProvider) return "Proveedor real";
+  return "Recurso del curso";
+};
+
 const Resources = ({ onBack }: Props) => {
   const navigate = useNavigate();
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -132,8 +138,8 @@ const Resources = ({ onBack }: Props) => {
                             <span className="text-xs font-bold text-primary">{resource.provider}</span>
                             <span className="mt-1 block text-[10px] uppercase tracking-[0.08em] text-muted">{resource.resourceType}</span>
                           </div>
-                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${resource.verifiedProvider ? "bg-primary/10 text-primary" : "bg-surface-muted text-muted"}`}>
-                            {resource.verifiedProvider ? "Proveedor real" : "Recurso del curso"}
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${resource.sourceKind === "student_material" || resource.verifiedProvider ? "bg-primary/10 text-primary" : "bg-surface-muted text-muted"}`}>
+                            {sourceLabel(resource.sourceKind, resource.verifiedProvider)}
                           </span>
                         </div>
                         <h3 className="mt-4 text-lg font-bold leading-6 text-content">{resource.title}</h3>
