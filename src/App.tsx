@@ -17,6 +17,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminQuizzes = lazy(() => import("./pages/admin/AdminQuizzes"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const Activities = lazy(() => import("./pages/activities/Activities"));
+const QuickCapture = lazy(() => import("./pages/capture/QuickCapture"));
 const DesignSystem = lazy(() => import("./pages/design-system/DesignSystem"));
 const FocusSession = lazy(() => import("./pages/focus/FocusSession"));
 const StudentHome = lazy(() => import("./pages/home/StudentHome"));
@@ -132,6 +133,7 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route index element={<StudentHomeRoute />} />
               <Route path="practice" element={<PracticeHub />} />
+              <Route path="capture" element={<QuickCapture />} />
               <Route path="practices" element={<Navigate to="/practice" replace />} />
               <Route path="quizzes" element={<Navigate to="/practice" replace />} />
               <Route path="quizzes/attempts/:attemptId" element={<QuizAttempt />} />
