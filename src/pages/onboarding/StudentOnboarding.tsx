@@ -73,7 +73,11 @@ const StudentOnboarding = () => {
   );
 
   useEffect(() => {
-    setSelectedKeys(periodSubjects.map((subject) => subject.key));
+    const timeoutId = window.setTimeout(() => {
+      setSelectedKeys(periodSubjects.map((subject) => subject.key));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [periodSubjects]);
 
   if (isAdmin) return <Navigate to="/admin" replace />;
