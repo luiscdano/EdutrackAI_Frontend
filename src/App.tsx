@@ -6,7 +6,7 @@ import { useAuth } from "./context/AuthContext";
 import AppLayout from "./layouts/AppLayout";
 import { ForbiddenPage, NotFoundPage, RouteErrorPage } from "./pages/errors/StatusPage";
 import Login from "./pages/login/Login";
-import Register from "./pages/register/Register";
+import Register from "./pages/register/StudentRegister";
 import { AdminRoute, ProtectedRoute, PublicOnlyRoute } from "./routes/RouteGuards";
 
 const AcademicProfileRoute = lazy(() => import("./pages/academic/AcademicProfileRoute"));
