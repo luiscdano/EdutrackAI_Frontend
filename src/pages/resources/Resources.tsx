@@ -13,9 +13,9 @@ import type {
 
 interface Props { onBack: () => void }
 
-const sourceLabel = (sourceKind: string, verifiedProvider: boolean) => {
+const sourceLabel = (sourceKind: string) => {
   if (sourceKind === "student_material") return "Tu material";
-  if (verifiedProvider) return "Proveedor real";
+  if (sourceKind === "provider_search") return "Fuente externa";
   return "Recurso del curso";
 };
 
@@ -75,7 +75,7 @@ const Resources = ({ onBack }: Props) => {
   return (
     <ContentShell
       title="Recursos"
-      description="Material para tus materias actuales, con la fuente visible antes de abrirlo."
+      description="Material para tus materias actuales. Primero mostramos tu material y recursos del curso; después, fuentes externas contextualizadas."
       onBack={onBack}
       loading={loading}
       error={error}
@@ -109,10 +109,14 @@ const Resources = ({ onBack }: Props) => {
                 value={topic}
                 onChange={(event) => setTopic(event.target.value)}
                 onKeyDown={(event) => { if (event.key === "Enter") void discover(subjectId); }}
-                placeholder="Tema específico, ej. Normalización, derivadas, arrays..."
+                placeholder="Tema real de clase: MAUI, normalización, derivadas..."
                 className="min-h-11 rounded-control border border-border bg-app-bg px-4 text-sm text-content outline-none focus:border-primary"
               />
-              <Button loading={searching} onClick={() => void discover(subjectId)}>Buscar</Button>
+              <Button loading={searching} onClick={() => void discover(subjectId)}>Buscar tema</Button>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+              <span>Escribe el concepto que estás estudiando, no el tipo de recurso. “Video” o “recurso” no se usan como tema.</span>
+              <button type="button" onClick={() => navigate(`/capture?subject=${subjectId}`)} className="font-semibold text-primary">Añadir material del profesor →</button>
             </div>
           </Card>
 
@@ -122,28 +126,37 @@ const Resources = ({ onBack }: Props) => {
                 <div>
                   <span className="prototype-eyebrow">{discovery.subject.name}</span>
                   <h2 className="mt-1 text-xl font-bold text-content">{discovery.topic ? `Recursos para ${discovery.topic}` : "Fuentes para empezar"}</h2>
+                  <p className="mt-1 text-xs text-muted">
+                    {discovery.topic
+                      ? "Las fuentes externas usan la materia + este tema para evitar búsquedas genéricas."
+                      : "Sin un tema concreto te mostramos fuentes base relacionadas con la materia."}
+                  </p>
                 </div>
-                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">Fuentes visibles</span>
+                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">Contexto visible</span>
               </div>
 
               {discovery.resources.length === 0 ? (
-                <Card padding="lg" className="text-center"><p className="text-sm text-muted">No encontré recursos para este tema todavía.</p></Card>
+                <Card padding="lg" className="text-center">
+                  <h3 className="font-bold text-content">Todavía no hay material para ese tema</h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm text-muted">Añade el material de tu profesor o prueba un tema más específico.</p>
+                  <Button className="mt-4" size="sm" onClick={() => navigate(`/capture?subject=${subjectId}`)}>Añadir material</Button>
+                </Card>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {discovery.resources.map((resource) => (
                     <a key={resource.id} href={resource.url} target="_blank" rel="noreferrer" className="group block">
-                      <Card padding="md" className="h-full transition group-hover:-translate-y-0.5 group-hover:border-primary/35">
+                      <Card padding="md" className="flex h-full min-h-[230px] flex-col transition group-hover:-translate-y-0.5 group-hover:border-primary/35">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <span className="text-xs font-bold text-primary">{resource.provider}</span>
                             <span className="mt-1 block text-[10px] uppercase tracking-[0.08em] text-muted">{resource.resourceType}</span>
                           </div>
-                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${resource.sourceKind === "student_material" || resource.verifiedProvider ? "bg-primary/10 text-primary" : "bg-surface-muted text-muted"}`}>
-                            {sourceLabel(resource.sourceKind, resource.verifiedProvider)}
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${resource.sourceKind === "student_material" ? "bg-primary/10 text-primary" : "bg-surface-muted text-muted"}`}>
+                            {sourceLabel(resource.sourceKind)}
                           </span>
                         </div>
                         <h3 className="mt-4 text-lg font-bold leading-6 text-content">{resource.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-muted">{resource.description}</p>
+                        <p className="mt-2 flex-1 text-sm leading-6 text-muted">{resource.description}</p>
                         <div className="mt-5 flex items-center justify-between gap-3 text-xs text-muted">
                           <span>{resource.difficulty}</span>
                           <span className="font-semibold text-primary">Abrir ↗</span>
