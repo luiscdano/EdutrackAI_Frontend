@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
-type IconName = "home" | "practice" | "book" | "chart" | "plus" | "bell" | "profile" | "users" | "settings" | "quiz" | "resource" | "audit" | "logout" | "sun" | "moon";
+type IconName = "home" | "practice" | "book" | "chart" | "plus" | "bell" | "profile" | "users" | "settings" | "quiz" | "resource" | "audit" | "logout" | "sun" | "moon" | "collapse";
 type Theme = "light" | "dark";
 
 interface NavItem {
@@ -30,6 +30,7 @@ const Icon = ({ name }: { name: IconName }) => {
     logout: "M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5m4-3 4-4-4-4m4 4H9",
     sun: "M12 3v2m0 14v2M3 12h2m14 0h2M5.64 5.64l1.42 1.42m9.88 9.88 1.42 1.42M18.36 5.64l-1.42 1.42M7.06 16.94l-1.42 1.42M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
     moon: "M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z",
+    collapse: "m15 18-6-6 6-6",
   };
 
   return (
@@ -87,6 +88,9 @@ const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState<Theme>(initialTheme);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => window.localStorage.getItem("edutrack-sidebar-collapsed") === "true",
+  );
   const nav = isAdmin ? adminNav : studentNav;
   const initials = `${user?.firstName?.[0] ?? "U"}${user?.lastName?.[0] ?? ""}`.toUpperCase();
   const fullName = useMemo(() => user ? `${user.firstName} ${user.lastName}` : "Usuario", [user]);
@@ -95,6 +99,10 @@ const AppLayout = () => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("edutrack-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    window.localStorage.setItem("edutrack-sidebar-collapsed", String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   const signOut = () => {
     logout();
@@ -106,53 +114,93 @@ const AppLayout = () => {
       key={item.to}
       to={item.to}
       end={item.end}
+      title={!mobile && sidebarCollapsed ? item.label : undefined}
       className={({ isActive }) => [
         mobile
           ? "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-semibold"
-          : "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition",
+          : `flex min-h-11 items-center rounded-xl text-sm font-semibold transition ${sidebarCollapsed ? "justify-center px-2" : "gap-3 px-3"}`,
         isActive ? "text-primary" : "text-muted hover:text-content",
         !mobile && isActive ? "bg-primary/10" : "",
         !mobile && !isActive ? "hover:bg-surface-muted" : "",
       ].join(" ")}
     >
       <Icon name={item.icon} />
-      <span className="truncate">{item.label}</span>
+      <span className={mobile ? "truncate" : sidebarCollapsed ? "sr-only" : "truncate"}>{item.label}</span>
     </NavLink>
   );
 
   return (
     <div className="min-h-screen bg-app-bg text-content">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-surface lg:flex">
-        <div className="flex h-[72px] items-center gap-3 border-b border-border px-5">
-          <NavLink to={isAdmin ? "/admin" : "/"} className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-white">ET</span>
-            <span>
-              <strong className="block text-sm text-content">EduTrack AI</strong>
-              <small className="text-[10px] text-muted">Tu copiloto académico</small>
-            </span>
+      <aside className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-surface transition-[width] duration-200 lg:flex ${sidebarCollapsed ? "w-20" : "w-64"}`}>
+        <div className={`flex h-[72px] items-center border-b border-border ${sidebarCollapsed ? "justify-center px-2" : "justify-between gap-2 px-4"}`}>
+          <NavLink to={isAdmin ? "/admin" : "/"} className="flex min-w-0 items-center gap-3" title="EduTrack AI">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-white">ET</span>
+            {!sidebarCollapsed && (
+              <span className="min-w-0">
+                <strong className="block truncate text-sm text-content">EduTrack AI</strong>
+                <small className="block truncate text-[10px] text-muted">Tu copiloto académico</small>
+              </span>
+            )}
           </NavLink>
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(true)}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted transition hover:bg-surface-muted hover:text-content"
+              aria-label="Contraer barra lateral"
+              title="Contraer barra lateral"
+            >
+              <Icon name="collapse" />
+            </button>
+          )}
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-5">
-          <p className="mb-3 px-3 text-[9px] font-bold uppercase tracking-[0.16em] text-muted">{isAdmin ? "Administración" : "Tu espacio"}</p>
+        {sidebarCollapsed && (
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(false)}
+            className="mx-auto mt-3 grid h-9 w-9 place-items-center rounded-xl text-muted transition hover:bg-surface-muted hover:text-content"
+            aria-label="Expandir barra lateral"
+            title="Expandir barra lateral"
+          >
+            <span className="rotate-180"><Icon name="collapse" /></span>
+          </button>
+        )}
+
+        <nav className={`flex-1 space-y-1 py-5 ${sidebarCollapsed ? "px-2" : "px-3"}`}>
+          {!sidebarCollapsed && (
+            <p className="mb-3 px-3 text-[9px] font-bold uppercase tracking-[0.16em] text-muted">{isAdmin ? "Administración" : "Tu espacio"}</p>
+          )}
           {nav.map((item) => renderNavLink(item))}
         </nav>
 
-        <div className="border-t border-border p-3">
-          <button type="button" onClick={() => navigate("/profile")} className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-surface-muted">
+        <div className={`border-t border-border ${sidebarCollapsed ? "p-2" : "p-3"}`}>
+          <button
+            type="button"
+            onClick={() => navigate("/profile")}
+            title={sidebarCollapsed ? fullName : undefined}
+            className={`flex w-full items-center rounded-xl text-left transition hover:bg-surface-muted ${sidebarCollapsed ? "justify-center p-2" : "gap-3 p-2"}`}
+          >
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-xs font-bold text-primary">{initials}</span>
-            <span className="min-w-0 flex-1">
-              <strong className="block truncate text-xs text-content">{fullName}</strong>
-              <small className="block truncate text-[10px] text-muted">{isAdmin ? "Administrador" : "Estudiante"}</small>
-            </span>
+            {!sidebarCollapsed && (
+              <span className="min-w-0 flex-1">
+                <strong className="block truncate text-xs text-content">{fullName}</strong>
+                <small className="block truncate text-[10px] text-muted">{isAdmin ? "Administrador" : "Estudiante"}</small>
+              </span>
+            )}
           </button>
-          <button type="button" onClick={signOut} className="mt-1 flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-muted transition hover:bg-surface-muted hover:text-content">
-            <Icon name="logout" /> Cerrar sesión
+          <button
+            type="button"
+            onClick={signOut}
+            title={sidebarCollapsed ? "Cerrar sesión" : undefined}
+            className={`mt-1 flex min-h-10 w-full items-center rounded-xl text-xs font-semibold text-muted transition hover:bg-surface-muted hover:text-content ${sidebarCollapsed ? "justify-center px-2" : "gap-3 px-3"}`}
+          >
+            <Icon name="logout" /> {!sidebarCollapsed && "Cerrar sesión"}
           </button>
         </div>
       </aside>
 
-      <div className="lg:pl-64">
+      <div className={`transition-[padding] duration-200 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <header className="sticky top-0 z-30 flex h-[64px] items-center justify-between gap-3 border-b border-border bg-app-bg/95 px-4 backdrop-blur sm:px-6 lg:h-[72px]">
           <div className="flex min-w-0 items-center gap-3">
             <NavLink to={isAdmin ? "/admin" : "/"} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-xs font-extrabold text-white lg:hidden">ET</NavLink>
@@ -190,7 +238,7 @@ const AppLayout = () => {
           </nav>
         )}
 
-        <main className={`px-4 py-5 sm:px-6 lg:px-8 lg:py-7 ${!isAdmin ? "pb-24 lg:pb-8" : ""}`}>
+        <main className={`px-4 py-5 sm:px-6 lg:px-8 lg:py-6 ${!isAdmin ? "pb-24 lg:pb-8" : ""}`}>
           <Outlet />
         </main>
       </div>
