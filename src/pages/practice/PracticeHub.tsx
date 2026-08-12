@@ -116,23 +116,24 @@ const PracticeHub = () => {
           <div className="mb-3">
             <span className="prototype-eyebrow">Empieza sin esperar</span>
             <h2 className="mt-1 text-xl font-bold text-content">Elige una de tus materias</h2>
-            <p className="mt-1 text-sm text-muted">Todavía no hay una prioridad adaptativa suficiente. Puedes repasar una materia o añadir una fecha/nota para que EduTrack afine el siguiente paso.</p>
+            <p className="mt-1 text-sm text-muted">No necesitas esperar a que exista un plan adaptativo. Puedes abrir Modo concentración, estudiar con cronómetro y guardar ese tiempo para que EduTrack aprenda de tu ritmo.</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {activeSubjects.map((assignment) => (
-              <Card key={assignment.id} padding="md" className="flex min-h-[190px] h-full flex-col">
+              <Card key={assignment.id} padding="md" className="flex min-h-[210px] h-full flex-col">
                 <div>
                   <span className="text-xs font-semibold text-primary">{assignment.curriculumCode ?? "Materia actual"}</span>
                   <h3 className="mt-2 min-h-[3rem] text-lg font-bold leading-6 text-content">{assignment.subject.name}</h3>
                   <p className="mt-2 text-xs leading-5 text-muted">
                     {assignment.difficultyLevel === "high"
-                      ? "La marcaste como una materia que te cuesta. Puede ser un buen punto de partida."
-                      : "Puedes empezar con un recurso del tema que estés viendo ahora."}
+                      ? "La marcaste como una materia que te cuesta. Puede ser un buen punto para concentrarte ahora."
+                      : "Puedes iniciar una sesión enfocada aunque EduTrack todavía esté reuniendo señales."}
                   </p>
                 </div>
                 <div className="mt-auto flex flex-wrap gap-2 pt-4">
-                  <Button size="sm" onClick={() => navigate(`/resources?subject=${assignment.subject.id}`)}>Repasar</Button>
-                  <Button size="sm" variant="secondary" onClick={() => navigate(`/capture?subject=${assignment.subject.id}`)}>Añadir contexto</Button>
+                  <Button size="sm" onClick={() => navigate(`/focus/manual/${assignment.subject.id}`)}>Modo concentración</Button>
+                  <Button size="sm" variant="secondary" onClick={() => navigate(`/resources?subject=${assignment.subject.id}`)}>Recursos</Button>
+                  <Button size="sm" variant="ghost" onClick={() => navigate(`/capture?subject=${assignment.subject.id}`)}>Añadir contexto</Button>
                 </div>
               </Card>
             ))}
@@ -175,7 +176,7 @@ const PracticeHub = () => {
         {availableQuizzes.length === 0 ? (
           <Card padding="md" className="border-dashed text-center">
             <h3 className="font-bold text-content">Todavía no hay quizzes creados para estas materias</h3>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">Eso no bloquea tu estudio: usa el repaso por materia de arriba. Cuando exista un quiz compatible aparecerá aquí automáticamente.</p>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">Eso no bloquea tu estudio: usa Modo concentración o el repaso por materia de arriba. Cuando exista un quiz compatible aparecerá aquí automáticamente.</p>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
