@@ -25,23 +25,19 @@ interface ButtonProps
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-white hover:bg-primary-hover focus-visible:ring-primary",
-
+    "border border-primary-hover bg-primary-hover text-surface hover:bg-primary focus-visible:ring-primary",
   secondary:
-    "border border-border bg-surface text-content hover:bg-slate-700 focus-visible:ring-slate-400",
-
+    "border border-border bg-surface-muted text-content hover:border-primary/30 hover:bg-primary/10 focus-visible:ring-primary",
   outline:
-    "border border-primary bg-transparent text-primary hover:bg-primary/10 focus-visible:ring-primary",
-
+    "border border-primary/45 bg-surface text-primary hover:bg-primary/10 focus-visible:ring-primary",
   ghost:
-    "bg-transparent text-content hover:bg-white/10 focus-visible:ring-slate-400",
-
+    "border border-transparent bg-transparent text-muted hover:bg-surface-muted hover:text-content focus-visible:ring-primary",
   danger:
-    "bg-danger text-white hover:bg-red-600 focus-visible:ring-danger",
+    "border border-danger bg-danger text-white hover:opacity-90 focus-visible:ring-danger",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "min-h-11 px-3 text-sm",
+  sm: "min-h-10 px-3 text-xs",
   md: "min-h-11 px-4 text-sm",
   lg: "min-h-12 px-5 text-base",
 };
@@ -66,8 +62,8 @@ const Button = ({
       disabled={isDisabled}
       aria-busy={loading}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-control font-semibold",
-        "transition-colors duration-200",
+        "inline-flex items-center justify-center gap-2 rounded-control font-semibold shadow-sm",
+        "transition duration-200",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         "focus-visible:ring-offset-app-bg",
         "disabled:pointer-events-none disabled:opacity-50",
@@ -83,7 +79,6 @@ const Button = ({
           className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
         />
       )}
-
       <span>{children}</span>
     </button>
   );

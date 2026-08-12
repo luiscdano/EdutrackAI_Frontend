@@ -108,7 +108,7 @@ const Dropdown = ({
         onClick={() =>
           setIsOpen((currentValue) => !currentValue)
         }
-        className="inline-flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-4 text-sm font-medium text-content transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="inline-flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-4 text-sm font-medium text-content transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         {trigger}
       </button>
@@ -171,8 +171,8 @@ export function DropdownItem({
         "flex min-h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm",
         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         danger
-          ? "text-red-300 hover:bg-danger/10"
-          : "text-content hover:bg-white/10",
+          ? "text-danger hover:bg-danger/10"
+          : "text-content hover:bg-surface-muted",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}

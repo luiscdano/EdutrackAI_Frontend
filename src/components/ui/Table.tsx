@@ -43,7 +43,7 @@ export function Table({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-card border border-border",
+        "w-full overflow-x-auto rounded-card border border-border bg-surface",
         containerClassName,
       )}
     >
@@ -69,7 +69,7 @@ export function TableHeader({
     <thead
       {...props}
       className={cn(
-        "border-b border-border bg-slate-900/60",
+        "border-b border-border bg-surface-muted",
         className,
       )}
     >
@@ -105,7 +105,7 @@ export function TableRow({
     <tr
       {...props}
       className={cn(
-        "transition-colors hover:bg-white/5",
+        "transition-colors hover:bg-surface-muted",
         className,
       )}
     >
@@ -143,7 +143,7 @@ export function TableCell({
     <td
       {...props}
       className={cn(
-        "px-4 py-3 text-slate-300",
+        "px-4 py-3 text-content",
         className,
       )}
     >

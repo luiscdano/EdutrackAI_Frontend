@@ -13,6 +13,9 @@ import type {
 interface ActivityFormProps {
   subjects: SubjectOption[];
   initialSession?: StudySession | null;
+  initialData?: Partial<StudySessionFormData>;
+  lockSubject?: boolean;
+  guidedTitle?: string;
   saving: boolean;
   onSubmit: (data: StudySessionFormData) => Promise<void>;
   onCancel: () => void;
@@ -28,6 +31,7 @@ const toLocalDateTime = (value: string) => {
 
 const createInitialData = (
   initialSession?: StudySession | null,
+  initialData?: Partial<StudySessionFormData>,
 ): StudySessionFormData => {
   if (initialSession) {
     return {
@@ -44,24 +48,31 @@ const createInitialData = (
   const later = new Date(now.getTime() + 60 * 60_000);
 
   return {
-    subjectId: "",
-    startedAt: toLocalDateTime(now.toISOString()),
-    endedAt: toLocalDateTime(later.toISOString()),
-    notes: "",
-    studyMethod: "",
-    productivityRating: 3,
+    subjectId: initialData?.subjectId ?? "",
+    startedAt: initialData?.startedAt
+      ? toLocalDateTime(initialData.startedAt)
+      : toLocalDateTime(now.toISOString()),
+    endedAt: initialData?.endedAt
+      ? toLocalDateTime(initialData.endedAt)
+      : toLocalDateTime(later.toISOString()),
+    notes: initialData?.notes ?? "",
+    studyMethod: initialData?.studyMethod ?? "",
+    productivityRating: initialData?.productivityRating ?? 3,
   };
 };
 
 const ActivityForm = ({
   subjects,
   initialSession = null,
+  initialData,
+  lockSubject = false,
+  guidedTitle,
   saving,
   onSubmit,
   onCancel,
 }: ActivityFormProps) => {
   const [formData, setFormData] = useState<StudySessionFormData>(() =>
-    createInitialData(initialSession),
+    createInitialData(initialSession, initialData),
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -102,10 +113,10 @@ const ActivityForm = ({
       <form className="space-y-5" onSubmit={handleSubmit}>
         <div>
           <h2 className="text-xl font-bold text-content">
-            {initialSession ? "Editar actividad" : "Nueva actividad"}
+            {guidedTitle ?? (initialSession ? "Editar actividad" : "Nueva actividad")}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Registra el tiempo, método y productividad de la sesión.
+            Registra el tiempo, método y productividad de la sesión. Al guardar, EduTrack utilizará el resultado para volver a evaluar tu plan.
           </p>
         </div>
 
@@ -122,7 +133,7 @@ const ActivityForm = ({
           <select
             id="activity-subject"
             value={formData.subjectId}
-            disabled={Boolean(initialSession)}
+            disabled={Boolean(initialSession) || lockSubject}
             onChange={(event) =>
               setFormData((current) => ({
                 ...current,
@@ -240,7 +251,7 @@ const ActivityForm = ({
             Cancelar
           </Button>
           <Button type="submit" loading={saving}>
-            {initialSession ? "Guardar cambios" : "Registrar actividad"}
+            {initialSession ? "Guardar cambios" : "Finalizar y registrar sesión"}
           </Button>
         </div>
       </form>

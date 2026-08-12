@@ -16,21 +16,16 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variantClasses: Record<CardVariant, string> = {
-  default:
-    "border border-border bg-surface",
-
-  bordered:
-    "border-2 border-border bg-surface",
-
-  elevated:
-    "border border-border bg-surface shadow-card",
+  default: "border border-border bg-surface",
+  bordered: "border border-border bg-surface shadow-none",
+  elevated: "border border-border/90 bg-surface shadow-card",
 };
 
 const paddingClasses: Record<CardPadding, string> = {
   none: "p-0",
   sm: "p-4",
-  md: "p-6",
-  lg: "p-8",
+  md: "p-5 sm:p-6",
+  lg: "p-5 sm:p-7",
 };
 
 const Card = ({
@@ -50,7 +45,7 @@ const Card = ({
         variantClasses[variant],
         paddingClasses[padding],
         interactive &&
-          "hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-lg",
+          "hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lg",
         className,
       )}
     >
