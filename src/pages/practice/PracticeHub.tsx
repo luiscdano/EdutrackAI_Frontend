@@ -9,6 +9,7 @@ import { getQuizzes, startQuizAttempt } from "../../services/quiz.service";
 import { getStudentContext } from "../../services/student-context.service";
 import type { StudyPlanActivity } from "../../types/adaptive.types";
 import type { QuizSummary } from "../../types/quiz.types";
+import type { StudentSubjectAssignment } from "../../types/student-context.types";
 
 const activityName = (value: string) => {
   const labels: Record<string, string> = {
@@ -24,7 +25,7 @@ const PracticeHub = () => {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<StudyPlanActivity[]>([]);
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
-  const [activeSubjectIds, setActiveSubjectIds] = useState<string[]>([]);
+  const [activeSubjects, setActiveSubjects] = useState<StudentSubjectAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,17 +35,13 @@ const PracticeHub = () => {
     setError(null);
     try {
       const [nextPlan, nextQuizzes, context] = await Promise.all([
-        getStudyPlan(false),
-        getQuizzes(),
+        getStudyPlan(false).catch(() => []),
+        getQuizzes().catch(() => []),
         getStudentContext(),
       ]);
       setPlan(nextPlan);
       setQuizzes(nextQuizzes.filter((quiz) => quiz.isActive));
-      setActiveSubjectIds(
-        context.subjects
-          .filter((item) => item.status === "active")
-          .map((item) => item.subject.id),
-      );
+      setActiveSubjects(context.subjects.filter((item) => item.status === "active"));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "No pude cargar tus prácticas.");
     } finally {
@@ -59,6 +56,11 @@ const PracticeHub = () => {
 
     return () => window.clearTimeout(timeoutId);
   }, [load]);
+
+  const activeSubjectIds = useMemo(
+    () => activeSubjects.map((item) => item.subject.id),
+    [activeSubjects],
+  );
 
   const availableQuizzes = useMemo(
     () => quizzes.filter((quiz) => activeSubjectIds.includes(quiz.subject.id)),
@@ -84,31 +86,64 @@ const PracticeHub = () => {
   if (loading) return <div className="grid min-h-[60vh] place-items-center"><Loader showLabel label="Preparando prácticas..." /></div>;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 pb-8">
+    <div className="mx-auto grid max-w-6xl gap-5 pb-8">
       <header>
         <span className="prototype-eyebrow">Practicar</span>
-        <h1 className="mt-1 text-[clamp(1.8rem,4vw,2.7rem)] font-bold tracking-[-0.04em] text-content">Entra, practica y sigue con tu día.</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">EduTrack pone primero lo que puede darte más resultado. También puedes elegir cualquier materia cuando quieras.</p>
+        <h1 className="mt-1 text-[clamp(1.7rem,3.5vw,2.5rem)] font-bold tracking-[-0.04em] text-content">Entra, practica y sigue con tu día.</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Si EduTrack tiene una prioridad clara, aparece primero. Si todavía falta contexto, siempre tendrás una forma útil de empezar.</p>
       </header>
 
       {error && <Card padding="md" className="border-danger/30"><p className="text-sm text-danger">{error}</p><Button className="mt-3" size="sm" onClick={() => void load()}>Reintentar</Button></Card>}
 
-      {recommended && (
-        <section className="rounded-[28px] border border-primary/25 bg-gradient-to-br from-primary/15 via-surface to-surface p-6 sm:p-7">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      {recommended ? (
+        <section className="rounded-[24px] border border-primary/25 bg-gradient-to-br from-primary/15 via-surface to-surface p-5 sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-primary/12 px-3 py-1.5 text-xs font-bold text-primary">Recomendado ahora</span>
                 <span className="rounded-full bg-surface-muted px-3 py-1.5 text-xs text-muted">{recommended.durationMinutes} min</span>
                 <span className="rounded-full bg-surface-muted px-3 py-1.5 text-xs text-muted">{activityName(recommended.activityType)}</span>
               </div>
-              <h2 className="mt-4 text-3xl font-bold tracking-[-0.04em] text-content">{recommended.title}</h2>
+              <h2 className="mt-3 text-2xl font-bold tracking-[-0.04em] text-content sm:text-3xl">{recommended.title}</h2>
               <p className="mt-2 text-sm leading-6 text-muted">{recommended.subject.name}</p>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">{recommended.reason}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{recommended.reason}</p>
             </div>
-            <Button size="lg" onClick={() => navigate(`/focus/${recommended.id}`)}>Empezar ahora</Button>
+            <Button onClick={() => navigate(`/focus/${recommended.id}`)}>Empezar ahora</Button>
           </div>
         </section>
+      ) : activeSubjects.length > 0 ? (
+        <section>
+          <div className="mb-3">
+            <span className="prototype-eyebrow">Empieza sin esperar</span>
+            <h2 className="mt-1 text-xl font-bold text-content">Elige una de tus materias</h2>
+            <p className="mt-1 text-sm text-muted">Todavía no hay una prioridad adaptativa suficiente. Puedes repasar una materia o añadir una fecha/nota para que EduTrack afine el siguiente paso.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {activeSubjects.map((assignment) => (
+              <Card key={assignment.id} padding="md" className="flex min-h-[190px] h-full flex-col">
+                <div>
+                  <span className="text-xs font-semibold text-primary">{assignment.curriculumCode ?? "Materia actual"}</span>
+                  <h3 className="mt-2 min-h-[3rem] text-lg font-bold leading-6 text-content">{assignment.subject.name}</h3>
+                  <p className="mt-2 text-xs leading-5 text-muted">
+                    {assignment.difficultyLevel === "high"
+                      ? "La marcaste como una materia que te cuesta. Puede ser un buen punto de partida."
+                      : "Puedes empezar con un recurso del tema que estés viendo ahora."}
+                  </p>
+                </div>
+                <div className="mt-auto flex flex-wrap gap-2 pt-4">
+                  <Button size="sm" onClick={() => navigate(`/resources?subject=${assignment.subject.id}`)}>Repasar</Button>
+                  <Button size="sm" variant="secondary" onClick={() => navigate(`/capture?subject=${assignment.subject.id}`)}>Añadir contexto</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <Card padding="lg" className="text-center">
+          <h2 className="text-xl font-bold text-content">Primero necesito tus materias</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">Cuando confirmes qué estás cursando, Practicar siempre tendrá un siguiente paso útil.</p>
+          <Button className="mt-4" onClick={() => navigate("/onboarding")}>Configurar materias</Button>
+        </Card>
       )}
 
       {secondaryPlan.length > 0 && (
@@ -131,16 +166,16 @@ const PracticeHub = () => {
       <section>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <span className="prototype-eyebrow">Prácticas rápidas</span>
-            <h2 className="mt-1 text-xl font-bold text-content">Elige una materia</h2>
+            <span className="prototype-eyebrow">Quizzes disponibles</span>
+            <h2 className="mt-1 text-xl font-bold text-content">Prácticas rápidas</h2>
           </div>
           <button type="button" onClick={() => navigate("/subjects")} className="text-sm font-semibold text-primary">Gestionar materias</button>
         </div>
 
         {availableQuizzes.length === 0 ? (
-          <Card padding="lg" className="text-center">
-            <h3 className="text-xl font-bold text-content">Aún no hay quizzes para tus materias</h3>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">Puedes continuar con el repaso recomendado o explorar recursos reales desde cada materia mientras se agregan más prácticas.</p>
+          <Card padding="md" className="border-dashed text-center">
+            <h3 className="font-bold text-content">Todavía no hay quizzes creados para estas materias</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">Eso no bloquea tu estudio: usa el repaso por materia de arriba. Cuando exista un quiz compatible aparecerá aquí automáticamente.</p>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
