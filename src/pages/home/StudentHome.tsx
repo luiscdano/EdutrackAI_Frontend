@@ -102,36 +102,43 @@ const StudentHome = () => {
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-5 pb-8">
-      <header className="pt-1">
-        <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted capitalize">{dateLabel()}</span>
-        <h1 className="mt-2 text-[clamp(1.8rem,4vw,2.8rem)] font-bold leading-tight tracking-[-0.04em] text-content">
-          {greeting()}, {user?.firstName}.
-        </h1>
-        <p className="mt-1.5 text-sm text-muted">
-          {pulse.context?.programName} · Período {pulse.context?.currentPeriod}
-        </p>
+    <div className="mx-auto grid max-w-6xl gap-4 pb-8">
+      <header className="pt-0.5">
+        <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-muted capitalize">{dateLabel()}</span>
+        <div className="mt-1 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div>
+            <h1 className="text-[clamp(1.65rem,3vw,2.35rem)] font-bold leading-tight tracking-[-0.04em] text-content">
+              {greeting()}, {user?.firstName}.
+            </h1>
+            <p className="mt-1 text-xs text-muted sm:text-sm">
+              {pulse.context?.programName} · Período {pulse.context?.currentPeriod}
+            </p>
+          </div>
+          <button type="button" onClick={() => navigate("/capture")} className="hidden text-xs font-semibold text-primary sm:block">
+            ¿Cambió algo? Añádelo →
+          </button>
+        </div>
       </header>
 
-      <section className="overflow-hidden rounded-[28px] border border-primary/25 bg-gradient-to-br from-primary/16 via-surface to-surface p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <section className="overflow-hidden rounded-[24px] border border-primary/25 bg-gradient-to-br from-primary/16 via-surface to-surface p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <span className="inline-flex rounded-full bg-primary/12 px-3 py-1.5 text-xs font-bold text-primary">Tu siguiente paso</span>
-            <h2 className="mt-4 text-[clamp(2rem,5vw,3.7rem)] font-bold leading-[1.02] tracking-[-0.05em] text-content">
+            <span className="inline-flex rounded-full bg-primary/12 px-3 py-1 text-[11px] font-bold text-primary">Tu siguiente paso</span>
+            <h2 className="mt-3 text-[clamp(1.75rem,4vw,2.8rem)] font-bold leading-[1.05] tracking-[-0.045em] text-content">
               {pulse.headline}
             </h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted">{pulse.message}</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted sm:text-[15px]">{pulse.message}</p>
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-2">
             {pulse.action ? (
-              <Button size="lg" onClick={() => navigate(`/focus/${pulse.action?.activityId}`)}>
+              <Button onClick={() => navigate(`/focus/${pulse.action?.activityId}`)}>
                 {pulse.action.label}
               </Button>
             ) : (
-              <Button size="lg" onClick={() => navigate("/practice")}>Practicar ahora</Button>
+              <Button onClick={() => navigate("/practice")}>Practicar ahora</Button>
             )}
-            <Button variant="secondary" size="lg" onClick={() => navigate("/subjects")}>Mis materias</Button>
+            <Button variant="secondary" onClick={() => navigate("/subjects")}>Mis materias</Button>
           </div>
         </div>
       </section>
@@ -141,13 +148,13 @@ const StudentHome = () => {
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="prototype-eyebrow">Pregúntale a EduTrack</span>
-              <h2 className="mt-1 text-xl font-bold text-content">No busques entre menús. Pregunta.</h2>
+              <h2 className="mt-1 text-lg font-bold text-content sm:text-xl">No busques entre menús. Pregunta.</h2>
               <p className="mt-1 text-sm leading-6 text-muted">Uso tus materias, evaluaciones, prácticas y progreso para darte una acción concreta.</p>
             </div>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/12 font-bold text-primary">AI</span>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-primary/12 text-sm font-bold text-primary">AI</span>
           </div>
 
-          <div className="mt-5 flex gap-2 rounded-2xl border border-border bg-app-bg p-2 focus-within:border-primary/60">
+          <div className="mt-4 flex gap-2 rounded-2xl border border-border bg-app-bg p-2 focus-within:border-primary/60">
             <input
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
@@ -174,11 +181,11 @@ const StudentHome = () => {
           </div>
 
           {reply && (
-            <div className="mt-5 rounded-2xl bg-primary/8 p-4">
+            <div className="mt-4 rounded-2xl bg-primary/8 p-4">
               <p className="text-sm leading-6 text-content">{reply.answer}</p>
               {(reply.action || reply.resourceDiscovery) && (
-                <Button className="mt-4" size="sm" onClick={openReplyAction}>
-                  {reply.resourceDiscovery ? "Ver recursos reales" : reply.action?.label ?? "Continuar"}
+                <Button className="mt-3" size="sm" onClick={openReplyAction}>
+                  {reply.resourceDiscovery ? "Ver recursos del tema" : reply.action?.label ?? "Continuar"}
                 </Button>
               )}
             </div>
@@ -188,20 +195,21 @@ const StudentHome = () => {
         <Card padding="lg">
           <span className="prototype-eyebrow">Lo próximo</span>
           {pulse.upcomingEvaluation ? (
-            <div className="mt-3">
-              <span className="text-4xl font-bold tracking-[-0.04em] text-content">
+            <div className="mt-2">
+              <span className="text-3xl font-bold tracking-[-0.04em] text-content">
                 {pulse.upcomingEvaluation.daysUntil === 0 ? "Hoy" : `${pulse.upcomingEvaluation.daysUntil}d`}
               </span>
-              <h2 className="mt-3 text-xl font-bold text-content">{pulse.upcomingEvaluation.title}</h2>
+              <h2 className="mt-2 text-lg font-bold text-content">{pulse.upcomingEvaluation.title}</h2>
               <p className="mt-1 text-sm text-muted">{pulse.upcomingEvaluation.subject.name}</p>
-              <p className="mt-4 text-xs leading-5 text-muted">
+              <p className="mt-3 text-xs leading-5 text-muted">
                 {new Intl.DateTimeFormat("es-DO", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date(pulse.upcomingEvaluation.scheduledAt))}
               </p>
             </div>
           ) : (
-            <div className="mt-4">
-              <h2 className="text-xl font-bold text-content">Sin fechas urgentes</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">Puedes usar este espacio para avanzar sin presión en la materia que prefieras.</p>
+            <div className="mt-3">
+              <h2 className="text-lg font-bold text-content">Sin fechas urgentes</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">Si tienes un parcial o entrega que aún no conozco, añádelo y reajusto tu siguiente paso.</p>
+              <Button className="mt-3" size="sm" variant="secondary" onClick={() => navigate("/capture")}>Añadir una fecha</Button>
             </div>
           )}
         </Card>
@@ -211,24 +219,24 @@ const StudentHome = () => {
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
             <span className="prototype-eyebrow">Esta semana</span>
-            <h2 className="mt-1 text-lg font-bold text-content">Solo lo necesario para saber que avanzas</h2>
+            <h2 className="mt-1 text-base font-bold text-content sm:text-lg">Solo lo necesario para saber que avanzas</h2>
           </div>
           <button type="button" onClick={() => navigate("/progress")} className="text-sm font-semibold text-primary">Ver progreso</button>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <Card padding="md">
             <span className="text-xs text-muted">Tiempo enfocado</span>
-            <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{pulse.week.studyMinutes} min</strong>
+            <strong className="mt-2 block text-2xl tracking-[-0.04em] text-content">{pulse.week.studyMinutes} min</strong>
             <span className="mt-1 block text-xs text-muted">{pulse.week.studySessions} sesiones</span>
           </Card>
           <Card padding="md">
             <span className="text-xs text-muted">Prácticas</span>
-            <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{pulse.week.quizAttempts}</strong>
+            <strong className="mt-2 block text-2xl tracking-[-0.04em] text-content">{pulse.week.quizAttempts}</strong>
             <span className="mt-1 block text-xs text-muted">{pulse.week.quizAttempts ? `${pulse.week.quizScore.toFixed(0)}% promedio` : "Empieza cuando quieras"}</span>
           </Card>
           <Card padding="md">
             <span className="text-xs text-muted">Constancia</span>
-            <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{pulse.week.streakDays} días</strong>
+            <strong className="mt-2 block text-2xl tracking-[-0.04em] text-content">{pulse.week.streakDays} días</strong>
             <span className="mt-1 block text-xs text-muted">Racha actual</span>
           </Card>
         </div>
