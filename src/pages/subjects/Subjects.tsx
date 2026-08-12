@@ -62,14 +62,27 @@ const Subjects = ({ onBack }: Props) => {
     [data],
   );
 
+  const upsertAssignment = (updated: StudentSubjectAssignment) => {
+    setData((current) => {
+      if (!current) return current;
+      const exists = current.subjects.some((item) => item.id === updated.id);
+      return {
+        ...current,
+        subjects: exists
+          ? current.subjects.map((item) => item.id === updated.id ? updated : item)
+          : [...current.subjects, updated],
+      };
+    });
+  };
+
   const addSubject = async () => {
     if (!newName.trim()) return;
     setAdding(true);
     try {
-      await addCustomSubject({ name: newName.trim(), difficultyLevel: "medium" });
+      const created = await addCustomSubject({ name: newName.trim(), difficultyLevel: "medium" });
+      upsertAssignment(created);
       setNewName("");
       setShowAdd(false);
-      await load();
     } catch (addError) {
       window.alert(addError instanceof Error ? addError.message : "No pude agregar la materia.");
     } finally {
@@ -83,8 +96,8 @@ const Subjects = ({ onBack }: Props) => {
   ) => {
     setWorkingId(assignment.id);
     try {
-      await updateMySubject(assignment.id, { difficultyLevel });
-      await load();
+      const updated = await updateMySubject(assignment.id, { difficultyLevel });
+      upsertAssignment(updated);
     } catch (updateError) {
       window.alert(updateError instanceof Error ? updateError.message : "No pude actualizar la materia.");
     } finally {
@@ -96,8 +109,7 @@ const Subjects = ({ onBack }: Props) => {
     if (!window.confirm(`¿Quitar ${assignment.subject.name} de tus materias actuales?`)) return;
     setWorkingId(assignment.id);
     try {
-      await removeMySubject(assignment.id);
-      await load();
+      upsertAssignment(await removeMySubject(assignment.id));
     } catch (removeError) {
       window.alert(removeError instanceof Error ? removeError.message : "No pude quitar la materia.");
     } finally {
@@ -108,8 +120,7 @@ const Subjects = ({ onBack }: Props) => {
   const restore = async (assignment: StudentSubjectAssignment) => {
     setWorkingId(assignment.id);
     try {
-      await updateMySubject(assignment.id, { status: "active" });
-      await load();
+      upsertAssignment(await updateMySubject(assignment.id, { status: "active" }));
     } catch (restoreError) {
       window.alert(restoreError instanceof Error ? restoreError.message : "No pude restaurar la materia.");
     } finally {
@@ -133,12 +144,12 @@ const Subjects = ({ onBack }: Props) => {
             <div>
               <span className="prototype-eyebrow">Tu contexto</span>
               <h2 className="mt-1 text-lg font-bold text-content">{data.context.institutionName}</h2>
-              <p className="mt-1 text-sm text-muted">{data.context.programName} · Período {data.context.currentPeriod}</p>
+              <p className="mt-1 text-sm text-muted">{data.context.programName} · Período de referencia {data.context.currentPeriod}</p>
               {data.context.sourceUrl && (
                 <a href={data.context.sourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-xs font-semibold text-primary hover:underline">Plan de estudios oficial ↗</a>
               )}
             </div>
-            <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>Cambiar período o carrera</Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>Ajustar carrera o materias</Button>
           </div>
         </Card>
       )}
@@ -168,20 +179,20 @@ const Subjects = ({ onBack }: Props) => {
           <Button className="mt-5" onClick={() => navigate("/onboarding")}>Preparar mi semestre</Button>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
           {active.map((assignment) => (
-            <Card key={assignment.id} padding="md" className="flex h-full flex-col">
+            <Card key={assignment.id} padding="md" className="flex min-h-[320px] h-full flex-col">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <span className="text-xs font-bold text-primary">{assignment.curriculumCode ?? "Personal"}</span>
-                  <h2 className="mt-1 text-xl font-bold tracking-[-0.02em] text-content">{assignment.subject.name}</h2>
+                  <h2 className="mt-1 min-h-[3.5rem] text-xl font-bold leading-7 tracking-[-0.02em] text-content">{assignment.subject.name}</h2>
                 </div>
-                <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[10px] text-muted">
-                  {assignment.source === "institution_catalog" ? "Pensum" : "Agregada por ti"}
+                <span className="shrink-0 rounded-full bg-surface-muted px-2.5 py-1 text-[10px] text-muted">
+                  {assignment.source === "institution_catalog" ? `Pensum${assignment.curriculumPeriod ? ` · P${assignment.curriculumPeriod}` : ""}` : "Agregada por ti"}
                 </span>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-5 min-h-[118px]">
                 <label className="text-xs font-semibold text-muted">¿Cómo sientes esta materia?</label>
                 <select
                   value={assignment.difficultyLevel}
@@ -193,10 +204,10 @@ const Subjects = ({ onBack }: Props) => {
                   <option value="medium">Normal</option>
                   <option value="high">Me cuesta</option>
                 </select>
-                <p className="mt-2 text-xs text-muted">EduTrack usa esta señal junto con tus resultados. Ahora: {difficultyLabel(assignment.difficultyLevel)}.</p>
+                <p className="mt-2 text-xs leading-5 text-muted">EduTrack usa esta señal junto con tus resultados. Ahora: {difficultyLabel(assignment.difficultyLevel)}.</p>
               </div>
 
-              <div className="mt-5 flex flex-1 items-end gap-2">
+              <div className="mt-auto flex flex-wrap gap-2 pt-5">
                 <Button size="sm" onClick={() => navigate(`/resources?subject=${assignment.subject.id}`)}>Recursos</Button>
                 <Button size="sm" variant="secondary" onClick={() => navigate(`/progress?subject=${assignment.subject.id}`)}>Progreso</Button>
                 <Button size="sm" variant="ghost" disabled={workingId === assignment.id} onClick={() => void remove(assignment)}>Quitar</Button>
@@ -208,7 +219,8 @@ const Subjects = ({ onBack }: Props) => {
 
       {inactive.length > 0 && (
         <section className="border-t border-border pt-5">
-          <h2 className="text-sm font-bold text-content">Fuera de tu período actual</h2>
+          <h2 className="text-sm font-bold text-content">Fuera de tus materias actuales</h2>
+          <p className="mt-1 text-xs text-muted">Un clic las devuelve sin tener que buscarlas de nuevo.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {inactive.map((assignment) => (
               <button
