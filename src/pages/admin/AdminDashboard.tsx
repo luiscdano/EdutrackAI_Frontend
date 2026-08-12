@@ -88,11 +88,11 @@ const AdminDashboard = ({ onBack }: Props) => {
 
   const metrics = useMemo(() => stats ? [
     { title: "Usuarios", value: stats.users.total, subtitle: `${stats.users.active} activos` },
-    { title: "Materias", value: stats.subjects.total, subtitle: "Registradas" },
+    { title: "Materias", value: stats.subjects.total, subtitle: "Catálogo operativo" },
     { title: "Quizzes", value: stats.quizzes.total, subtitle: `${stats.quizzes.attempts} intentos` },
     { title: "Calificaciones", value: stats.grades.total, subtitle: "Registros" },
     { title: "Sesiones", value: stats.studySessions.total, subtitle: "Sesiones de estudio" },
-    { title: "Recursos", value: stats.resources.total, subtitle: "Materiales" },
+    { title: "Recursos guardados", value: stats.resources.total, subtitle: "No incluye búsquedas externas" },
     { title: "Recomendaciones", value: stats.recommendations.total, subtitle: "Generadas" },
   ] : [], [stats]);
   const maxValue = Math.max(1, ...metrics.map((item) => Number(item.value)));
@@ -107,7 +107,7 @@ const AdminDashboard = ({ onBack }: Props) => {
   return (
     <ContentShell
       title="Dashboard administrativo"
-      description="Indicadores generales, riesgo académico y actividad reciente del sistema."
+      description="Indicadores operativos, panorama adaptativo y auditoría de las acciones administrativas."
       onBack={onBack}
       loading={loading}
       error={error}
@@ -212,9 +212,12 @@ const AdminDashboard = ({ onBack }: Props) => {
         </Card>
 
         <Card padding="md">
-          <h2 className="text-xl font-bold text-content">Actividad reciente</h2>
+          <h2 className="text-xl font-bold text-content">Auditoría administrativa</h2>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Aquí aparecen acciones sensibles del panel —por ejemplo activar usuarios o cambiar roles—. Las sesiones, quizzes y progreso del estudiante alimentan sus métricas y el motor adaptativo, no este registro de auditoría.
+          </p>
           {logs.length === 0 ? (
-            <p className="mt-5 text-muted">No hay eventos de auditoría registrados.</p>
+            <p className="mt-5 text-muted">Todavía no hay acciones administrativas auditadas.</p>
           ) : (
             <div className="mt-5 space-y-3">
               {logs.map((log) => (
