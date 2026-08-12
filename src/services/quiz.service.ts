@@ -22,9 +22,11 @@ export const saveQuizAnswer = (attemptId: string, questionId: string, selectedOp
 });
 export const finishQuizAttempt = (attemptId: string) => apiRequest<QuizAttemptDetail>(`/quizzies/attempts/${attemptId}/finish`, { method: "POST" });
 
+// New quizzes always begin as drafts. The backend only allows publishing after
+// every question has enough options and at least one correct answer.
 export const createQuiz = (payload: QuizPayload) => apiRequest<QuizSummary>("/quizzies", {
   method: "POST",
-  body: JSON.stringify(payload),
+  body: JSON.stringify({ ...payload, isActive: false }),
 });
 export const updateQuiz = (quizId: string, payload: Partial<Omit<QuizPayload, "subjectId">>) => apiRequest<QuizSummary>(`/quizzies/${quizId}`, {
   method: "PUT",

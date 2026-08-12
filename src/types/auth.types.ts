@@ -32,6 +32,9 @@ export interface RegisterData {
   email: string;
   password: string;
   avatarUrl?: string;
+  institutionKey?: string;
+  programKey?: string;
+  institutionName?: string;
 }
 
 export interface AuthData {

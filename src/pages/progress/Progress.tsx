@@ -1,125 +1,81 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ContentShell from "../../components/content/ContentShell";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { getAdaptiveHistory, getAdaptiveOverview } from "../../services/adaptive.service";
+import { getAdaptiveOverview } from "../../services/adaptive.service";
+import { getCopilotPulse } from "../../services/copilot.service";
 import { getGrades } from "../../services/content.service";
-import type {
-  AdaptiveOverview,
-  AdaptiveRisk,
-  AdaptiveRiskHistoryEntry,
-  RiskLevel,
-} from "../../types/adaptive.types";
+import { getMyQuizAttempts } from "../../services/quiz.service";
+import type { AdaptiveOverview } from "../../types/adaptive.types";
+import type { CopilotPulse } from "../../types/copilot.types";
 import type { AcademicGrade } from "../../types/content.types";
+import type { QuizAttemptSummary } from "../../types/quiz.types";
 
 interface Props { onBack: () => void }
 
 const scoreOf = (grade: AcademicGrade) => Number(grade.gradeValue) || 0;
-const formatDate = (value: string) => new Date(value).toLocaleDateString("es-DO");
-const formatMoment = (value: string) => new Date(value).toLocaleString("es-DO", {
-  day: "2-digit",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
-});
+const quizScoreOf = (attempt: QuizAttemptSummary) => Number(attempt.score) || 0;
+const averageOf = (items: AcademicGrade[]) => items.length
+  ? items.reduce((sum, item) => sum + scoreOf(item), 0) / items.length
+  : 0;
+const quizAverageOf = (items: QuizAttemptSummary[]) => items.length
+  ? items.reduce((sum, item) => sum + quizScoreOf(item), 0) / items.length
+  : 0;
 
-const riskLabel = (level: RiskLevel) => {
-  if (level === "high") return "Prioridad alta";
-  if (level === "attention") return "Necesita atención";
-  if (level === "watch") return "En observación";
+const trendOf = (items: AcademicGrade[]) => {
+  const ordered = [...items].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  if (ordered.length < 2) return "Empezando";
+  const recent = averageOf(ordered.slice(0, Math.min(3, ordered.length)));
+  const previousItems = ordered.slice(3, 6);
+  const previous = previousItems.length ? averageOf(previousItems) : scoreOf(ordered[ordered.length - 1]);
+  const delta = recent - previous;
+  if (delta > 2) return "Mejorando";
+  if (delta < -2) return "Necesita un empujón";
   return "Estable";
 };
 
-const triggerLabel = (trigger: string) => {
-  const labels: Record<string, string> = {
-    manual: "Recalculado manualmente",
-    daily_scheduler: "Revisión periódica",
-    grade_created: "Nueva calificación",
-    grade_updated: "Calificación actualizada",
-    quiz_finished: "Quiz completado",
-    study_session_saved: "Sesión registrada",
-    plan_activity_completed: "Actividad completada",
-    evaluation_changed: "Evaluación actualizada",
-  };
-  return labels[trigger] ?? trigger.replaceAll("_", " ");
+const statusOf = (level?: string) => {
+  if (level === "high") return "Necesita refuerzo";
+  if (level === "attention") return "Ponle atención";
+  if (level === "watch") return "En camino";
+  return "Va bien";
 };
 
-const componentLabel = (key: string) => {
-  const labels: Record<string, string> = {
-    performance: "Rendimiento",
-    evaluationUrgency: "Evaluación próxima",
-    inactivity: "Inactividad",
-    recentQuiz: "Quiz reciente",
-    difficulty: "Dificultad",
-  };
-
-  return labels[key] ?? key;
-};
-
-const averageOf = (items: AcademicGrade[]) =>
-  items.length
-    ? items.reduce((sum, grade) => sum + scoreOf(grade), 0) / items.length
-    : 0;
-
-const trendFor = (items: AcademicGrade[]) => {
-  const ordered = [...items].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
-
-  if (ordered.length < 2) {
-    return { delta: 0, label: "Sin tendencia suficiente" };
-  }
-
-  const recent = averageOf(ordered.slice(0, Math.min(3, ordered.length)));
-  const previousSlice = ordered.slice(3, 6);
-  const previous = previousSlice.length
-    ? averageOf(previousSlice)
-    : scoreOf(ordered[ordered.length - 1]);
-  const delta = recent - previous;
-
-  if (delta > 2) return { delta, label: "Mejorando" };
-  if (delta < -2) return { delta, label: "Descendiendo" };
-  return { delta, label: "Estable" };
-};
+const formatDate = (value: string) => new Intl.DateTimeFormat("es-DO", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+}).format(new Date(value));
 
 const Progress = ({ onBack }: Props) => {
   const navigate = useNavigate();
+  const initialSubject = new URLSearchParams(window.location.search).get("subject") ?? "all";
   const [grades, setGrades] = useState<AcademicGrade[]>([]);
+  const [attempts, setAttempts] = useState<QuizAttemptSummary[]>([]);
   const [overview, setOverview] = useState<AdaptiveOverview | null>(null);
-  const [history, setHistory] = useState<AdaptiveRiskHistoryEntry[]>([]);
+  const [pulse, setPulse] = useState<CopilotPulse | null>(null);
+  const [subjectId, setSubjectId] = useState(initialSubject);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const initialSubject = new URLSearchParams(window.location.search).get("subject") ?? "all";
-  const [subjectId, setSubjectId] = useState(initialSubject);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const [gradeData, adaptiveData, historyData] = await Promise.all([
+      const [nextGrades, nextAttempts, nextOverview, nextPulse] = await Promise.all([
         getGrades(),
+        getMyQuizAttempts(),
         getAdaptiveOverview().catch(() => null),
-        getAdaptiveHistory(undefined, 100).catch(() => []),
+        getCopilotPulse().catch(() => null),
       ]);
-
-      setGrades(gradeData);
-      setOverview(adaptiveData);
-      setHistory(historyData);
+      setGrades(nextGrades);
+      setAttempts(nextAttempts.filter((attempt) => attempt.isFinished));
+      setOverview(nextOverview);
+      setPulse(nextPulse);
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "No fue posible cargar el progreso.",
-      );
+      setError(loadError instanceof Error ? loadError.message : "No pude cargar tu progreso.");
     } finally {
       setLoading(false);
     }
@@ -133,330 +89,201 @@ const Progress = ({ onBack }: Props) => {
     return () => window.clearTimeout(timeoutId);
   }, [load]);
 
-  const subjects = useMemo(
-    () => Array.from(
-      new Map(grades.map((grade) => [grade.subject.id, grade.subject])).values(),
-    ),
-    [grades],
-  );
+  const summaries = useMemo(() => {
+    const activeSubjects = pulse?.activeSubjects ?? [];
+    return activeSubjects.map((assignment) => {
+      const subjectGrades = grades.filter((grade) => grade.subject.id === assignment.subject.id);
+      const subjectAttempts = attempts.filter((attempt) => attempt.quizzies.subject?.id === assignment.subject.id);
+      const latest = [...subjectGrades].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] ?? null;
+      const risk = overview?.risks.find((item) => item.subjectId === assignment.subject.id);
+      return {
+        id: assignment.subject.id,
+        name: assignment.subject.name,
+        grades: subjectGrades,
+        attempts: subjectAttempts,
+        average: averageOf(subjectGrades),
+        practiceAverage: quizAverageOf(subjectAttempts),
+        latest,
+        trend: trendOf(subjectGrades),
+        status: statusOf(risk?.level),
+      };
+    });
+  }, [attempts, grades, overview, pulse]);
 
-  const filtered = useMemo(() => grades.filter((grade) => {
-    const matchesSubject = subjectId === "all" || grade.subject.id === subjectId;
-    const text = `${grade.subject.name} ${grade.gradeType} ${grade.description}`.toLowerCase();
-    return matchesSubject && text.includes(search.trim().toLowerCase());
-  }), [grades, search, subjectId]);
-
-  const average = averageOf(filtered);
-  const approved = filtered.filter((grade) => scoreOf(grade) >= 70).length;
-  const trend = trendFor(filtered);
-
-  const selectedRisk = useMemo<AdaptiveRisk | null>(() => {
-    if (!overview) return null;
-    if (subjectId === "all") return overview.priority;
-    return overview.risks.find((risk) => risk.subjectId === subjectId) ?? null;
-  }, [overview, subjectId]);
-
-  const selectedHistory = useMemo(() => {
-    const targetSubjectId = subjectId === "all" ? selectedRisk?.subjectId : subjectId;
-    if (!targetSubjectId) return [];
-
-    return history
-      .filter((entry) => entry.subjectId === targetSubjectId)
-      .sort((a, b) => new Date(a.evaluatedAt).getTime() - new Date(b.evaluatedAt).getTime())
-      .slice(-8);
-  }, [history, selectedRisk?.subjectId, subjectId]);
-
-  const riskEvolution = useMemo(() => {
-    if (selectedHistory.length < 2) return null;
-    const first = selectedHistory[0].score;
-    const latest = selectedHistory[selectedHistory.length - 1].score;
-    const delta = latest - first;
-
-    return {
-      delta,
-      label: delta < 0 ? "El riesgo está bajando" : delta > 0 ? "El riesgo está subiendo" : "El riesgo se mantiene",
-    };
-  }, [selectedHistory]);
-
-  const subjectSummaries = useMemo(() => {
-    const bySubject = new Map<string, AcademicGrade[]>();
-
-    for (const grade of grades) {
-      const current = bySubject.get(grade.subject.id) ?? [];
-      current.push(grade);
-      bySubject.set(grade.subject.id, current);
-    }
-
-    return [...bySubject.entries()]
-      .map(([id, subjectGrades]) => {
-        const subject = subjectGrades[0].subject;
-        const risk = overview?.risks.find((item) => item.subjectId === id) ?? null;
-        const ordered = [...subjectGrades].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-        );
-
-        return {
-          id,
-          name: subject.name,
-          average: averageOf(subjectGrades),
-          latest: ordered[0] ? scoreOf(ordered[0]) : 0,
-          records: subjectGrades.length,
-          trend: trendFor(subjectGrades),
-          risk,
-        };
-      })
-      .sort((a, b) => {
-        const riskDelta = (b.risk?.score ?? 0) - (a.risk?.score ?? 0);
-        if (riskDelta !== 0) return riskDelta;
-        return a.average - b.average;
-      });
-  }, [grades, overview]);
+  const selected = subjectId === "all"
+    ? null
+    : summaries.find((item) => item.id === subjectId) ?? null;
+  const overallAverage = grades.length ? averageOf(grades) : 0;
+  const overallPracticeAverage = attempts.length ? quizAverageOf(attempts) : 0;
+  const recentAttempts = [...attempts]
+    .sort((a, b) => new Date(b.finishedAt ?? b.startedAt).getTime() - new Date(a.finishedAt ?? a.startedAt).getTime())
+    .slice(0, 6);
 
   return (
     <ContentShell
-      title="Progreso académico"
-      description="Entiende cómo estás avanzando, qué materias requieren atención y por qué EduTrack ajusta tu plan."
+      title="Progreso"
+      description="Tus notas, prácticas y tiempo de estudio en un solo lugar."
       onBack={onBack}
       loading={loading}
       error={error}
       onRetry={() => void load()}
-      actions={
-        <Button onClick={() => navigate("/practices")}>Ir a Mi plan</Button>
-      }
+      actions={<Button onClick={() => navigate("/practice")}>Practicar</Button>}
     >
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card padding="md">
-          <p className="text-sm text-muted">Registros</p>
-          <p className="mt-2 text-3xl font-bold text-content">{filtered.length}</p>
-          <p className="mt-1 text-xs text-muted">Calificaciones analizadas</p>
+          <span className="text-xs text-muted">Promedio registrado</span>
+          <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{grades.length ? `${overallAverage.toFixed(1)}%` : "—"}</strong>
+          <span className="mt-1 block text-xs text-muted">{grades.length ? `${grades.length} calificaciones` : "Cuando tengas notas aparecerán aquí"}</span>
         </Card>
-
         <Card padding="md">
-          <p className="text-sm text-muted">Promedio</p>
-          <p className="mt-2 text-3xl font-bold text-content">{average.toFixed(1)}%</p>
-          <p className="mt-1 text-xs text-muted">{approved} aprobadas con 70% o más</p>
+          <span className="text-xs text-muted">Tiempo esta semana</span>
+          <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{pulse?.week.studyMinutes ?? 0} min</strong>
+          <span className="mt-1 block text-xs text-muted">{pulse?.week.studySessions ?? 0} sesiones</span>
         </Card>
-
         <Card padding="md">
-          <p className="text-sm text-muted">Tendencia reciente</p>
-          <p className="mt-2 text-2xl font-bold text-content">{trend.label}</p>
-          <p className="mt-1 text-xs text-muted">
-            {trend.delta === 0
-              ? "Aún hacen falta más registros para comparar."
-              : `${trend.delta > 0 ? "+" : ""}${trend.delta.toFixed(1)} puntos frente al periodo anterior.`}
-          </p>
+          <span className="text-xs text-muted">Prácticas completadas</span>
+          <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{attempts.length}</strong>
+          <span className="mt-1 block text-xs text-muted">{attempts.length ? `${overallPracticeAverage.toFixed(0)}% promedio en quizzes` : "Completa un quiz para medir tu práctica"}</span>
         </Card>
-
-        <Card padding="md" className={selectedRisk?.level === "high" ? "prototype-priority" : ""}>
-          <p className="text-sm text-muted">Riesgo académico</p>
-          <p className="mt-2 text-3xl font-bold text-content">
-            {selectedRisk ? `${selectedRisk.score}/100` : "—"}
-          </p>
-          <p className="mt-1 text-xs font-semibold text-primary">
-            {selectedRisk ? riskLabel(selectedRisk.level) : "Sin análisis disponible"}
-          </p>
+        <Card padding="md">
+          <span className="text-xs text-muted">Constancia</span>
+          <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{pulse?.week.streakDays ?? 0} días</strong>
+          <span className="mt-1 block text-xs text-muted">Racha actual</span>
         </Card>
       </section>
 
-      {selectedRisk && (
-        <Card padding="lg" className="prototype-priority">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-3xl">
-              <span className="prototype-eyebrow">Lectura inteligente</span>
-              <h2 className="mt-1 text-2xl font-bold text-content">
-                {selectedRisk.subject.name}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                EduTrack no usa solamente el promedio. También combina proximidad de evaluaciones,
-                inactividad, quizzes recientes y dificultad declarada para decidir la prioridad.
-              </p>
-
-              <div className="mt-4 grid gap-2">
-                {selectedRisk.reasons.map((reason) => (
-                  <div key={reason} className="rounded-xl bg-surface-muted px-4 py-3 text-sm text-muted">
-                    {reason}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="min-w-[260px] rounded-2xl border border-border bg-surface p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-muted">Factores del riesgo</p>
-              <div className="mt-3 grid gap-2">
-                {Object.entries(selectedRisk.components).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between gap-4 rounded-xl bg-surface-muted px-3 py-2.5">
-                    <span className="text-xs text-muted">{componentLabel(key)}</span>
-                    <strong className="text-sm text-content">+{value}</strong>
-                  </div>
-                ))}
-              </div>
-              <Button className="mt-4 w-full" onClick={() => navigate("/practices")}>Ver acción recomendada</Button>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {selectedHistory.length > 0 && (
-        <Card padding="lg">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      {pulse?.action && (
+        <Card padding="lg" className="border-primary/25 bg-primary/5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <span className="prototype-eyebrow">Evolución adaptativa</span>
-              <h2 className="mt-1 text-xl font-bold text-content">Cómo ha cambiado el riesgo</h2>
-              <p className="mt-2 text-sm text-muted">
-                Cada punto representa una evaluación del motor provocada por una nota, quiz, sesión, evaluación o recálculo.
-              </p>
+              <span className="prototype-eyebrow">Dónde pondría el esfuerzo ahora</span>
+              <h2 className="mt-1 text-xl font-bold text-content">{pulse.action.subjectName}</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{pulse.message}</p>
             </div>
-            {riskEvolution && (
-              <div className="rounded-xl bg-surface-muted px-4 py-3 text-right">
-                <strong className="block text-sm text-content">{riskEvolution.label}</strong>
-                <span className="text-xs text-muted">
-                  {riskEvolution.delta > 0 ? "+" : ""}{riskEvolution.delta} puntos en el periodo visible
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-5 grid gap-3">
-            {selectedHistory.map((entry) => (
-              <div key={entry.id} className="grid gap-2 md:grid-cols-[170px_1fr_90px] md:items-center">
-                <div>
-                  <p className="text-xs font-semibold text-content">{formatMoment(entry.evaluatedAt)}</p>
-                  <p className="mt-0.5 text-[11px] text-muted">{triggerLabel(entry.trigger)}</p>
-                </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-surface-muted">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${Math.max(3, Math.min(100, entry.score))}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2 md:justify-end">
-                  <strong className="text-sm text-content">{entry.score}/100</strong>
-                  <span className="text-[10px] font-semibold text-primary">{riskLabel(entry.level)}</span>
-                </div>
-              </div>
-            ))}
+            <Button onClick={() => navigate(`/focus/${pulse.action?.activityId}`)}>{pulse.action.label}</Button>
           </div>
         </Card>
       )}
 
-      <Card padding="md">
-        <div className="grid gap-4 md:grid-cols-[1fr_260px]">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar evaluación o materia"
-            className="rounded-control border border-border bg-app-bg px-4 py-3 text-content outline-none focus:border-primary"
-          />
-          <select
-            value={subjectId}
-            onChange={(event) => setSubjectId(event.target.value)}
-            className="rounded-control border border-border bg-app-bg px-4 py-3 text-content outline-none focus:border-primary"
-          >
-            <option value="all">Todas las materias</option>
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>{subject.name}</option>
-            ))}
-          </select>
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <span className="prototype-eyebrow">Resultados de práctica</span>
+            <h2 className="mt-1 text-xl font-bold text-content">Tus quizzes recientes</h2>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate("/practice")}>Hacer otro quiz</Button>
         </div>
-      </Card>
 
-      {subjectId === "all" && subjectSummaries.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <span className="prototype-eyebrow">Comparación por materia</span>
-              <h2 className="mt-1 text-xl font-bold text-content">Dónde conviene enfocar el esfuerzo</h2>
-            </div>
-          </div>
-
+        {recentAttempts.length === 0 ? (
+          <Card padding="lg" className="text-center">
+            <h3 className="text-lg font-bold text-content">Todavía no hay resultados de quizzes</h3>
+            <p className="mt-2 text-sm text-muted">Cuando completes uno, aquí verás la calificación, aciertos, materia y fecha.</p>
+          </Card>
+        ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {subjectSummaries.map((summary) => (
-              <button
-                key={summary.id}
-                type="button"
-                onClick={() => setSubjectId(summary.id)}
-                className="text-left"
-              >
-                <Card padding="md" className="h-full transition hover:-translate-y-0.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-bold text-content">{summary.name}</h3>
-                      <p className="mt-1 text-xs text-muted">{summary.records} registros</p>
-                    </div>
-                    {summary.risk && (
-                      <span className="prototype-badge">{summary.risk.score}/100</span>
-                    )}
+            {recentAttempts.map((attempt) => (
+              <Card key={attempt.id} padding="md">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-semibold text-primary">{attempt.quizzies.subject?.name ?? "Práctica"}</span>
+                    <h3 className="mt-1 font-bold text-content">{attempt.quizzies.title}</h3>
                   </div>
+                  <strong className="text-2xl text-content">{quizScoreOf(attempt).toFixed(0)}%</strong>
+                </div>
+                <p className="mt-3 text-sm text-muted">{attempt.correctAnswers} correctas de {attempt.totalQuestion}</p>
+                <p className="mt-1 text-xs text-muted">{formatDate(attempt.finishedAt ?? attempt.startedAt)}</p>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
 
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <span className="prototype-eyebrow">Por materia</span>
+            <h2 className="mt-1 text-xl font-bold text-content">Lo que realmente necesitas saber</h2>
+          </div>
+          {selected && <button type="button" onClick={() => setSubjectId("all")} className="text-sm font-semibold text-primary">Ver todas</button>}
+        </div>
+
+        {!selected ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {summaries.map((summary) => (
+              <button key={summary.id} type="button" onClick={() => setSubjectId(summary.id)} className="text-left">
+                <Card padding="md" className="h-full transition hover:-translate-y-0.5 hover:border-primary/30">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-bold text-content">{summary.name}</h3>
+                    <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[10px] font-semibold text-muted">{summary.status}</span>
+                  </div>
                   <div className="mt-5 grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-surface-muted p-3">
-                      <span className="block text-[10px] uppercase tracking-[0.08em] text-muted">Promedio</span>
-                      <strong className="mt-1 block text-lg text-content">{summary.average.toFixed(1)}%</strong>
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted">Notas</span>
+                      <strong className="mt-1 block text-lg text-content">{summary.grades.length ? `${summary.average.toFixed(0)}%` : "—"}</strong>
                     </div>
                     <div className="rounded-xl bg-surface-muted p-3">
-                      <span className="block text-[10px] uppercase tracking-[0.08em] text-muted">Última</span>
-                      <strong className="mt-1 block text-lg text-content">{summary.latest.toFixed(1)}%</strong>
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted">Quizzes</span>
+                      <strong className="mt-1 block text-lg text-content">{summary.attempts.length ? `${summary.practiceAverage.toFixed(0)}%` : "—"}</strong>
                     </div>
                     <div className="rounded-xl bg-surface-muted p-3">
-                      <span className="block text-[10px] uppercase tracking-[0.08em] text-muted">Tendencia</span>
-                      <strong className="mt-1 block text-sm text-content">{summary.trend.label}</strong>
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted">Tendencia</span>
+                      <strong className="mt-1 block text-xs text-content">{summary.trend}</strong>
                     </div>
                   </div>
-
-                  <p className="mt-4 text-xs font-semibold text-primary">
-                    {summary.risk ? riskLabel(summary.risk.level) : "Sin riesgo calculado"}
-                  </p>
+                  <span className="mt-4 block text-xs font-semibold text-primary">Ver detalle →</span>
                 </Card>
               </button>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-[0.75fr_1.25fr]">
+            <Card padding="lg">
+              <span className="prototype-eyebrow">{selected.status}</span>
+              <h2 className="mt-1 text-2xl font-bold tracking-[-0.03em] text-content">{selected.name}</h2>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-surface-muted p-3">
+                  <span className="text-xs text-muted">Notas</span>
+                  <strong className="mt-1 block text-xl text-content">{selected.grades.length ? `${selected.average.toFixed(1)}%` : "—"}</strong>
+                </div>
+                <div className="rounded-xl bg-surface-muted p-3">
+                  <span className="text-xs text-muted">Quizzes</span>
+                  <strong className="mt-1 block text-xl text-content">{selected.attempts.length ? `${selected.practiceAverage.toFixed(1)}%` : "—"}</strong>
+                </div>
+                <div className="rounded-xl bg-surface-muted p-3">
+                  <span className="text-xs text-muted">Tendencia</span>
+                  <strong className="mt-1 block text-sm text-content">{selected.trend}</strong>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-muted">{selected.attempts.length ? `${selected.attempts.length} quiz(zes) completado(s) en esta materia.` : "Aún no has completado quizzes de esta materia."}</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => navigate("/practice")}>Practicar</Button>
+                <Button size="sm" variant="secondary" onClick={() => navigate(`/resources?subject=${selected.id}`)}>Recursos</Button>
+              </div>
+            </Card>
 
-      {filtered.length === 0 ? (
-        <Card padding="lg" className="text-center">
-          <h2 className="text-xl font-bold text-content">No hay calificaciones</h2>
-          <p className="mt-2 text-muted">Todavía no existen registros para los filtros seleccionados.</p>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filtered
-            .slice()
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .map((grade) => {
-              const score = scoreOf(grade);
-              return (
-                <Card key={grade.id} padding="md">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-primary">
-                        {grade.subject.name} · {grade.gradeType}
-                      </p>
-                      <h2 className="mt-1 text-lg font-bold text-content">{grade.description}</h2>
-                      <p className="mt-2 text-sm text-muted">Fecha: {formatDate(grade.date)}</p>
-                    </div>
-                    <div className={`text-3xl font-bold ${score >= 70 ? "text-emerald-500" : score >= 60 ? "text-amber-500" : "text-red-500"}`}>
-                      {score.toFixed(1)}%
-                    </div>
-                  </div>
-
-                  {grade.gradeChanges.length > 0 && (
-                    <div className="mt-4 border-t border-border pt-4">
-                      <p className="text-sm font-semibold text-content">Historial de cambios</p>
-                      <div className="mt-2 space-y-2">
-                        {grade.gradeChanges.map((change) => (
-                          <p key={change.id} className="text-sm text-muted">
-                            {change.oldValue} → {change.newValue} · {change.reason ?? "Sin motivo"} · {formatDate(change.createdAt)}
-                          </p>
-                        ))}
+            <Card padding="lg">
+              <h3 className="text-lg font-bold text-content">Tus calificaciones</h3>
+              {selected.grades.length === 0 ? (
+                <p className="mt-3 text-sm text-muted">Todavía no hay calificaciones registradas para esta materia.</p>
+              ) : (
+                <div className="mt-4 divide-y divide-border">
+                  {[...selected.grades]
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((grade) => (
+                      <div key={grade.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                        <div>
+                          <strong className="block text-sm text-content">{grade.description}</strong>
+                          <span className="mt-1 block text-xs text-muted">{grade.gradeType} · {formatDate(grade.date)}</span>
+                        </div>
+                        <strong className="text-xl text-content">{scoreOf(grade).toFixed(1)}%</strong>
                       </div>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-        </div>
-      )}
+                    ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+      </section>
     </ContentShell>
   );
 };

@@ -6,6 +6,7 @@ import {
 
 import AdminAcademicManagement from "../../components/admin-academic/AdminAcademicManagement";
 import EvaluationsManager from "../../components/admin-academic/EvaluationsManager";
+import InstitutionCatalogManager from "../../components/admin-academic/InstitutionCatalogManager";
 import {
   createAdminSubject,
   getAdminAcademicSnapshot,
@@ -140,6 +141,11 @@ const AcademicManagement = () => {
 
   return (
     <div className="space-y-8">
+      <InstitutionCatalogManager
+        operationalSubjects={snapshot.subjects}
+        onRefresh={load}
+      />
+
       <EvaluationsManager
         subjects={snapshot.subjects}
         evaluations={evaluations}

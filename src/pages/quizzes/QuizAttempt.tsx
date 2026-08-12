@@ -106,7 +106,7 @@ const QuizAttempt = () => {
   };
 
   return (
-    <ContentShell title={attempt?.quizzies.title ?? "Realizar quiz"} description={attempt?.isFinished ? "Revisa tu puntuación y las respuestas del intento." : "Selecciona una respuesta por pregunta y finaliza cuando estés lista."} onBack={() => navigate("/practices")} loading={loading} error={error} onRetry={() => void load()}>
+    <ContentShell title={attempt?.quizzies.title ?? "Realizar quiz"} description={attempt?.isFinished ? "Revisa tu puntuación y cómo este intento alimenta tu progreso." : "Selecciona una respuesta por pregunta y finaliza cuando estés lista."} onBack={() => navigate("/practice")} loading={loading} error={error} onRetry={() => void load()}>
       {attempt && (
         <>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -118,7 +118,16 @@ const QuizAttempt = () => {
 
           {attempt.isFinished ? (
             <>
-              <Card padding="lg" className="text-center"><p className="text-sm font-semibold uppercase tracking-wider text-primary">Resultado</p><p className="mt-3 text-5xl font-bold text-content">{Number(attempt.score).toFixed(1)}</p><p className="mt-2 text-muted">{attempt.correctAnswers} respuestas correctas de {attempt.totalQuestion}</p></Card>
+              <Card padding="lg" className="text-center">
+                <p className="text-sm font-semibold uppercase tracking-wider text-primary">Resultado</p>
+                <p className="mt-3 text-5xl font-bold text-content">{Number(attempt.score).toFixed(1)}%</p>
+                <p className="mt-2 text-muted">{attempt.correctAnswers} respuestas correctas de {attempt.totalQuestion}</p>
+                <p className="mt-2 text-xs text-muted">Este resultado queda guardado y aparece en Progreso. EduTrack también lo usa para ajustar tus próximas recomendaciones.</p>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <Button onClick={() => navigate("/progress")}>Ver mi progreso</Button>
+                  <Button variant="outline" onClick={() => navigate("/practice")}>Seguir practicando</Button>
+                </div>
+              </Card>
               <div className="space-y-4">
                 {attempt.questions.map((question, index) => {
                   const selected = question.questionOptions.find((option) => option.id === question.selectedOptionId);
@@ -127,7 +136,6 @@ const QuizAttempt = () => {
                   return <Card key={question.id} padding="md" className={wasCorrect ? "border-success/50" : "border-danger/50"}><div className="flex items-start justify-between gap-3"><h3 className="font-bold text-content">{index + 1}. {question.questionText}</h3><span className={`rounded-full px-3 py-1 text-xs font-semibold ${wasCorrect ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}>{wasCorrect ? "Correcta" : "Incorrecta"}</span></div><p className="mt-3 text-sm text-muted">Tu respuesta: <span className="text-content">{selected?.optionText ?? "Sin respuesta"}</span></p>{!wasCorrect && <p className="mt-2 text-sm text-muted">Respuesta correcta: <span className="text-success">{correct?.optionText ?? "No disponible"}</span></p>}<p className="mt-2 text-xs text-muted">Valor: {question.points} punto(s)</p></Card>;
                 })}
               </div>
-              <div className="flex flex-wrap justify-end gap-3"><Button variant="outline" onClick={() => navigate("/practices")}>Volver al historial</Button></div>
             </>
           ) : (
             <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">

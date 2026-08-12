@@ -30,6 +30,12 @@ export const ProtectedRoute = () => {
 };
 
 export const AdminRoute = () => {
-  const { isAdmin } = useAuth();
-  return isAdmin ? <Outlet /> : <Navigate to="/403" replace />;
+  const { isAdmin, isInitializing } = useAuth();
+
+  if (isInitializing) return <FullPageLoader />;
+
+  // A student can land on an old admin URL through browser history after
+  // switching accounts. Returning home is safer and less confusing than
+  // trapping a valid session on a 403 page.
+  return isAdmin ? <Outlet /> : <Navigate to="/" replace />;
 };
