@@ -101,6 +101,16 @@ const StudentHome = () => {
     );
   }
 
+  const activePeriods = Array.from(new Set(
+    pulse.activeSubjects
+      .map((item) => item.curriculumPeriod)
+      .filter((value): value is number => typeof value === "number"),
+  )).sort((a, b) => a - b);
+
+  const periodLabel = activePeriods.length > 1
+    ? `Referencia: período ${pulse.context?.currentPeriod} · Materias de períodos ${activePeriods.join(", ")}`
+    : `Período ${pulse.context?.currentPeriod}`;
+
   return (
     <div className="mx-auto grid max-w-6xl gap-4 pb-8">
       <header className="pt-0.5">
@@ -111,7 +121,7 @@ const StudentHome = () => {
               {greeting()}, {user?.firstName}.
             </h1>
             <p className="mt-1 text-xs text-muted sm:text-sm">
-              {pulse.context?.programName} · Período {pulse.context?.currentPeriod}
+              {pulse.context?.programName} · {periodLabel}
             </p>
           </div>
           <button type="button" onClick={() => navigate("/capture")} className="hidden text-xs font-semibold text-primary sm:block">
