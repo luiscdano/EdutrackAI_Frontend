@@ -20,6 +20,7 @@ const Activities = lazy(() => import("./pages/activities/Activities"));
 const QuickCapture = lazy(() => import("./pages/capture/QuickCapture"));
 const DesignSystem = lazy(() => import("./pages/design-system/DesignSystem"));
 const FocusSession = lazy(() => import("./pages/focus/FocusSession"));
+const ManualFocusSession = lazy(() => import("./pages/focus/ManualFocusSession"));
 const StudentHome = lazy(() => import("./pages/home/StudentHome"));
 const Notifications = lazy(() => import("./pages/notifications/Notifications"));
 const StudentOnboarding = lazy(() => import("./pages/onboarding/StudentOnboarding"));
@@ -138,6 +139,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="onboarding" element={<StudentOnboarding />} />
+            <Route path="focus/manual/:subjectId" element={<ManualFocusSession />} />
             <Route path="focus/:activityId" element={<FocusSession />} />
 
             <Route element={<AppLayout />}>
