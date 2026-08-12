@@ -6,8 +6,7 @@ import {
 
 import AdminAcademicManagement from "../../components/admin-academic/AdminAcademicManagement";
 import EvaluationsManager from "../../components/admin-academic/EvaluationsManager";
-import Button from "../../components/ui/Button";
-import Card from "../../components/ui/Card";
+import InstitutionCatalogManager from "../../components/admin-academic/InstitutionCatalogManager";
 import {
   createAdminSubject,
   getAdminAcademicSnapshot,
@@ -16,10 +15,6 @@ import {
   upsertAcademicResult,
   type AdminAcademicSnapshot,
 } from "../../services/admin-academic.service";
-import {
-  syncAcademicCatalog,
-  type CatalogSyncResult,
-} from "../../services/admin-catalog-sync.service";
 import {
   createEvaluation,
   deactivateEvaluation,
@@ -52,8 +47,6 @@ const AcademicManagement = () => {
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
-  const [catalogSyncing, setCatalogSyncing] = useState(false);
-  const [catalogSyncResult, setCatalogSyncResult] = useState<CatalogSyncResult | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,19 +112,6 @@ const AcademicManagement = () => {
   const handleUpsertResult = (data: ResultFormData) =>
     execute(() => upsertAcademicResult(data, snapshot));
 
-  const handleCatalogSync = async () => {
-    setCatalogSyncing(true);
-    try {
-      const result = await syncAcademicCatalog();
-      setCatalogSyncResult(result);
-      await load();
-    } catch (syncError) {
-      window.alert(syncError instanceof Error ? syncError.message : "No fue posible sincronizar el catálogo institucional.");
-    } finally {
-      setCatalogSyncing(false);
-    }
-  };
-
   const refreshEvaluations = useCallback(async () => {
     setEvaluationLoading(true);
     try {
@@ -161,25 +141,10 @@ const AcademicManagement = () => {
 
   return (
     <div className="space-y-8">
-      <Card padding="md" className="border-primary/25">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-3xl">
-            <span className="prototype-eyebrow">Preparación de contenido</span>
-            <h2 className="mt-1 text-xl font-bold text-content">Traer materias del catálogo oficial al Admin</h2>
-            <p className="mt-2 text-sm leading-6 text-muted">
-              Sincroniza las materias institucionales para poder cargar evaluaciones, recursos y quizzes desde Administración antes de que un estudiante las seleccione.
-            </p>
-            {catalogSyncResult && (
-              <p className="mt-3 text-xs font-semibold text-primary">
-                {catalogSyncResult.uniqueSubjects} materias disponibles · {catalogSyncResult.created} nuevas · {catalogSyncResult.reused} ya existentes · {catalogSyncResult.reactivated} reactivadas.
-              </p>
-            )}
-          </div>
-          <Button loading={catalogSyncing} onClick={() => void handleCatalogSync()}>
-            Sincronizar catálogo institucional
-          </Button>
-        </div>
-      </Card>
+      <InstitutionCatalogManager
+        operationalSubjects={snapshot.subjects}
+        onRefresh={load}
+      />
 
       <EvaluationsManager
         subjects={snapshot.subjects}
