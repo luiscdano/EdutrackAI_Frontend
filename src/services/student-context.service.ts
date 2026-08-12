@@ -8,7 +8,7 @@ import type {
 } from "../types/student-context.types";
 
 export const getAcademicCatalog = () =>
-  apiRequest<InstitutionCatalog[]>("/student-context/catalog");
+  apiRequest<InstitutionCatalog[]>("/student-context/catalog", { authenticated: false });
 
 export const getStudentContext = () =>
   apiRequest<StudentContextOverview>("/student-context/me");
