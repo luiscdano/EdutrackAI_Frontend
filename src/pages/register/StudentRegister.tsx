@@ -110,9 +110,9 @@ const StudentRegister = ({ onRegisterSuccess }: Props) => {
 
   return (
     <main className="min-h-screen bg-app-bg text-content lg:grid lg:grid-cols-[0.9fr_1.1fr]">
-      <section className="hidden min-h-screen bg-primary px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-14">
+      <section className="hidden min-h-screen bg-[#315765] px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-14">
         <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-sm font-extrabold text-primary">ET</span>
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-sm font-extrabold text-[#315765]">ET</span>
           <div>
             <strong className="block text-lg">EduTrack AI</strong>
             <span className="text-xs text-white/70">Tu copiloto universitario</span>
