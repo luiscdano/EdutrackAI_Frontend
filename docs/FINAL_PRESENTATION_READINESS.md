@@ -29,3 +29,4 @@ This branch is presentation-ready only after the complete student/admin story ca
 
 The feature branches stay separate from their frozen reference bases and are not merged automatically.
 The backend managed-catalog migration must be applied before testing institution/career creation locally.
+This checklist is also used to trigger the final quality run after the managed-catalog implementation.
