@@ -98,7 +98,7 @@ const StudentRegister = ({ onRegisterSuccess }: Props) => {
         career: mode === "catalog" ? program?.name ?? "" : manualCareer.trim(),
         ...(mode === "catalog" && institution && program
           ? { institutionKey: institution.key, programKey: program.key }
-          : {}),
+          : { institutionName: manualInstitution.trim() }),
       });
       onRegisterSuccess(auth.user);
     } catch (submitError) {
@@ -210,7 +210,7 @@ const StudentRegister = ({ onRegisterSuccess }: Props) => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-2 text-sm font-semibold">Universidad o instituto<input className={fieldClass} value={manualInstitution} onChange={(e) => setManualInstitution(e.target.value)} placeholder="Ej. UASD, INTEC..." /></label>
                   <label className="grid gap-2 text-sm font-semibold">Carrera<input className={fieldClass} value={manualCareer} onChange={(e) => setManualCareer(e.target.value)} placeholder="Ej. Ingeniería de Software" /></label>
-                  <p className="sm:col-span-2 text-xs leading-5 text-muted">Guardaremos tu carrera ahora. En el siguiente paso podrás indicar manualmente institución, período y materias si todavía no existe un catálogo oficial en EduTrack.</p>
+                  <p className="sm:col-span-2 text-xs leading-5 text-muted">Guardaremos ambos datos desde ahora. En el siguiente paso solo completas el período y las materias reales; no tendrás que escribir de nuevo la universidad ni la carrera.</p>
                 </div>
               )}
             </section>
