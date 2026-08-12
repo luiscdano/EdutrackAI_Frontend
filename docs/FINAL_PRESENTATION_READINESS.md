@@ -12,6 +12,7 @@ This branch is presentation-ready only after the complete student/admin story ca
 - Ask EduTrack about a concrete topic; the written topic must win over plan/deadline labels.
 - Open contextual resources with visible source/provider.
 - Enter Practice even when no adaptive plan exists yet.
+- Open Modo concentración from any active subject even before an adaptive plan exists, see the live timer, choose a 15/25/45/60 minute goal and save the real study session.
 - Complete a published quiz and return to Progress/Home.
 
 ## Admin
@@ -29,4 +30,4 @@ This branch is presentation-ready only after the complete student/admin story ca
 
 The feature branches stay separate from their frozen reference bases and are not merged automatically.
 The backend managed-catalog migration must be applied before testing institution/career creation locally.
-This checklist is also used to trigger the final quality run after the managed-catalog implementation.
+This checklist also triggers the final frontend quality run after restoring independent Modo concentración.
