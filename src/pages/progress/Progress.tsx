@@ -7,15 +7,21 @@ import Card from "../../components/ui/Card";
 import { getAdaptiveOverview } from "../../services/adaptive.service";
 import { getCopilotPulse } from "../../services/copilot.service";
 import { getGrades } from "../../services/content.service";
+import { getMyQuizAttempts } from "../../services/quiz.service";
 import type { AdaptiveOverview } from "../../types/adaptive.types";
 import type { CopilotPulse } from "../../types/copilot.types";
 import type { AcademicGrade } from "../../types/content.types";
+import type { QuizAttemptSummary } from "../../types/quiz.types";
 
 interface Props { onBack: () => void }
 
 const scoreOf = (grade: AcademicGrade) => Number(grade.gradeValue) || 0;
+const quizScoreOf = (attempt: QuizAttemptSummary) => Number(attempt.score) || 0;
 const averageOf = (items: AcademicGrade[]) => items.length
   ? items.reduce((sum, item) => sum + scoreOf(item), 0) / items.length
+  : 0;
+const quizAverageOf = (items: QuizAttemptSummary[]) => items.length
+  ? items.reduce((sum, item) => sum + quizScoreOf(item), 0) / items.length
   : 0;
 
 const trendOf = (items: AcademicGrade[]) => {
@@ -47,6 +53,7 @@ const Progress = ({ onBack }: Props) => {
   const navigate = useNavigate();
   const initialSubject = new URLSearchParams(window.location.search).get("subject") ?? "all";
   const [grades, setGrades] = useState<AcademicGrade[]>([]);
+  const [attempts, setAttempts] = useState<QuizAttemptSummary[]>([]);
   const [overview, setOverview] = useState<AdaptiveOverview | null>(null);
   const [pulse, setPulse] = useState<CopilotPulse | null>(null);
   const [subjectId, setSubjectId] = useState(initialSubject);
@@ -57,12 +64,14 @@ const Progress = ({ onBack }: Props) => {
     setLoading(true);
     setError(null);
     try {
-      const [nextGrades, nextOverview, nextPulse] = await Promise.all([
+      const [nextGrades, nextAttempts, nextOverview, nextPulse] = await Promise.all([
         getGrades(),
+        getMyQuizAttempts(),
         getAdaptiveOverview().catch(() => null),
         getCopilotPulse().catch(() => null),
       ]);
       setGrades(nextGrades);
+      setAttempts(nextAttempts.filter((attempt) => attempt.isFinished));
       setOverview(nextOverview);
       setPulse(nextPulse);
     } catch (loadError) {
@@ -84,29 +93,36 @@ const Progress = ({ onBack }: Props) => {
     const activeSubjects = pulse?.activeSubjects ?? [];
     return activeSubjects.map((assignment) => {
       const subjectGrades = grades.filter((grade) => grade.subject.id === assignment.subject.id);
+      const subjectAttempts = attempts.filter((attempt) => attempt.quizzies.subject?.id === assignment.subject.id);
       const latest = [...subjectGrades].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] ?? null;
       const risk = overview?.risks.find((item) => item.subjectId === assignment.subject.id);
       return {
         id: assignment.subject.id,
         name: assignment.subject.name,
         grades: subjectGrades,
+        attempts: subjectAttempts,
         average: averageOf(subjectGrades),
+        practiceAverage: quizAverageOf(subjectAttempts),
         latest,
         trend: trendOf(subjectGrades),
         status: statusOf(risk?.level),
       };
     });
-  }, [grades, overview, pulse]);
+  }, [attempts, grades, overview, pulse]);
 
   const selected = subjectId === "all"
     ? null
     : summaries.find((item) => item.id === subjectId) ?? null;
   const overallAverage = grades.length ? averageOf(grades) : 0;
+  const overallPracticeAverage = attempts.length ? quizAverageOf(attempts) : 0;
+  const recentAttempts = [...attempts]
+    .sort((a, b) => new Date(b.finishedAt ?? b.startedAt).getTime() - new Date(a.finishedAt ?? a.startedAt).getTime())
+    .slice(0, 6);
 
   return (
     <ContentShell
       title="Progreso"
-      description="Una lectura simple de cómo vas. Los cálculos complejos se quedan detrás."
+      description="Tus notas, prácticas y tiempo de estudio en un solo lugar."
       onBack={onBack}
       loading={loading}
       error={error}
@@ -125,9 +141,9 @@ const Progress = ({ onBack }: Props) => {
           <span className="mt-1 block text-xs text-muted">{pulse?.week.studySessions ?? 0} sesiones</span>
         </Card>
         <Card padding="md">
-          <span className="text-xs text-muted">Prácticas</span>
-          <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{pulse?.week.quizAttempts ?? 0}</strong>
-          <span className="mt-1 block text-xs text-muted">{pulse?.week.quizAttempts ? `${pulse.week.quizScore.toFixed(0)}% promedio` : "Sin presión"}</span>
+          <span className="text-xs text-muted">Prácticas completadas</span>
+          <strong className="mt-2 block text-3xl tracking-[-0.04em] text-content">{attempts.length}</strong>
+          <span className="mt-1 block text-xs text-muted">{attempts.length ? `${overallPracticeAverage.toFixed(0)}% promedio en quizzes` : "Completa un quiz para medir tu práctica"}</span>
         </Card>
         <Card padding="md">
           <span className="text-xs text-muted">Constancia</span>
@@ -152,6 +168,39 @@ const Progress = ({ onBack }: Props) => {
       <section>
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
+            <span className="prototype-eyebrow">Resultados de práctica</span>
+            <h2 className="mt-1 text-xl font-bold text-content">Tus quizzes recientes</h2>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate("/practice")}>Hacer otro quiz</Button>
+        </div>
+
+        {recentAttempts.length === 0 ? (
+          <Card padding="lg" className="text-center">
+            <h3 className="text-lg font-bold text-content">Todavía no hay resultados de quizzes</h3>
+            <p className="mt-2 text-sm text-muted">Cuando completes uno, aquí verás la calificación, aciertos, materia y fecha.</p>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {recentAttempts.map((attempt) => (
+              <Card key={attempt.id} padding="md">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-semibold text-primary">{attempt.quizzies.subject?.name ?? "Práctica"}</span>
+                    <h3 className="mt-1 font-bold text-content">{attempt.quizzies.title}</h3>
+                  </div>
+                  <strong className="text-2xl text-content">{quizScoreOf(attempt).toFixed(0)}%</strong>
+                </div>
+                <p className="mt-3 text-sm text-muted">{attempt.correctAnswers} correctas de {attempt.totalQuestion}</p>
+                <p className="mt-1 text-xs text-muted">{formatDate(attempt.finishedAt ?? attempt.startedAt)}</p>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
             <span className="prototype-eyebrow">Por materia</span>
             <h2 className="mt-1 text-xl font-bold text-content">Lo que realmente necesitas saber</h2>
           </div>
@@ -167,14 +216,18 @@ const Progress = ({ onBack }: Props) => {
                     <h3 className="font-bold text-content">{summary.name}</h3>
                     <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[10px] font-semibold text-muted">{summary.status}</span>
                   </div>
-                  <div className="mt-5 grid grid-cols-2 gap-2">
+                  <div className="mt-5 grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-surface-muted p-3">
-                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted">Promedio</span>
-                      <strong className="mt-1 block text-xl text-content">{summary.grades.length ? `${summary.average.toFixed(0)}%` : "—"}</strong>
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted">Notas</span>
+                      <strong className="mt-1 block text-lg text-content">{summary.grades.length ? `${summary.average.toFixed(0)}%` : "—"}</strong>
+                    </div>
+                    <div className="rounded-xl bg-surface-muted p-3">
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-muted">Quizzes</span>
+                      <strong className="mt-1 block text-lg text-content">{summary.attempts.length ? `${summary.practiceAverage.toFixed(0)}%` : "—"}</strong>
                     </div>
                     <div className="rounded-xl bg-surface-muted p-3">
                       <span className="text-[10px] uppercase tracking-[0.08em] text-muted">Tendencia</span>
-                      <strong className="mt-1 block text-sm text-content">{summary.trend}</strong>
+                      <strong className="mt-1 block text-xs text-content">{summary.trend}</strong>
                     </div>
                   </div>
                   <span className="mt-4 block text-xs font-semibold text-primary">Ver detalle →</span>
@@ -187,16 +240,21 @@ const Progress = ({ onBack }: Props) => {
             <Card padding="lg">
               <span className="prototype-eyebrow">{selected.status}</span>
               <h2 className="mt-1 text-2xl font-bold tracking-[-0.03em] text-content">{selected.name}</h2>
-              <div className="mt-5 grid grid-cols-2 gap-2">
+              <div className="mt-5 grid grid-cols-3 gap-2">
                 <div className="rounded-xl bg-surface-muted p-3">
-                  <span className="text-xs text-muted">Promedio</span>
-                  <strong className="mt-1 block text-2xl text-content">{selected.grades.length ? `${selected.average.toFixed(1)}%` : "—"}</strong>
+                  <span className="text-xs text-muted">Notas</span>
+                  <strong className="mt-1 block text-xl text-content">{selected.grades.length ? `${selected.average.toFixed(1)}%` : "—"}</strong>
+                </div>
+                <div className="rounded-xl bg-surface-muted p-3">
+                  <span className="text-xs text-muted">Quizzes</span>
+                  <strong className="mt-1 block text-xl text-content">{selected.attempts.length ? `${selected.practiceAverage.toFixed(1)}%` : "—"}</strong>
                 </div>
                 <div className="rounded-xl bg-surface-muted p-3">
                   <span className="text-xs text-muted">Tendencia</span>
-                  <strong className="mt-1 block text-base text-content">{selected.trend}</strong>
+                  <strong className="mt-1 block text-sm text-content">{selected.trend}</strong>
                 </div>
               </div>
+              <p className="mt-4 text-xs text-muted">{selected.attempts.length ? `${selected.attempts.length} quiz(zes) completado(s) en esta materia.` : "Aún no has completado quizzes de esta materia."}</p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => navigate("/practice")}>Practicar</Button>
                 <Button size="sm" variant="secondary" onClick={() => navigate(`/resources?subject=${selected.id}`)}>Recursos</Button>
