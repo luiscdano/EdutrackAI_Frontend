@@ -9,9 +9,10 @@ import {
   addCustomSubject,
   applyAcademicCatalog,
   getAcademicCatalog,
+  getStudentContext,
   saveCustomAcademicContext,
 } from "../../services/student-context.service";
-import type { InstitutionCatalog } from "../../types/student-context.types";
+import type { CatalogSubject, InstitutionCatalog } from "../../types/student-context.types";
 
 type SetupMode = "catalog" | "manual";
 
@@ -27,6 +28,8 @@ const StudentOnboarding = () => {
   const [programKey, setProgramKey] = useState("");
   const [period, setPeriod] = useState(1);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [visitedPeriods, setVisitedPeriods] = useState<string[]>([]);
+  const [subjectSearch, setSubjectSearch] = useState("");
   const [manualInstitution, setManualInstitution] = useState("");
   const [manualProgram, setManualProgram] = useState("");
   const [manualPeriod, setManualPeriod] = useState(1);
@@ -34,10 +37,50 @@ const StudentOnboarding = () => {
 
   useEffect(() => {
     let active = true;
-    void getAcademicCatalog()
-      .then((items) => {
+
+    void Promise.all([
+      getAcademicCatalog(),
+      getStudentContext().catch(() => null),
+    ])
+      .then(([items, current]) => {
         if (!active) return;
         setCatalog(items);
+
+        const existingContext = current?.context;
+        if (existingContext?.institutionKey === "custom") {
+          setMode("manual");
+          setManualInstitution(existingContext.institutionName);
+          setManualProgram(existingContext.programName);
+          setManualPeriod(existingContext.currentPeriod);
+          setManualSubjects(
+            (current?.subjects ?? [])
+              .filter((item) => item.status === "active")
+              .map((item) => item.subject.name)
+              .join("\n"),
+          );
+          return;
+        }
+
+        const existingInstitution = existingContext
+          ? items.find((item) => item.key === existingContext.institutionKey)
+          : null;
+        const existingProgram = existingInstitution?.programs.find(
+          (item) => item.key === existingContext?.programKey,
+        );
+
+        if (existingInstitution && existingProgram && current) {
+          setInstitutionKey(existingInstitution.key);
+          setProgramKey(existingProgram.key);
+          setPeriod(existingContext?.currentPeriod ?? 1);
+          setSelectedKeys(
+            current.subjects
+              .filter((item) => item.status === "active" && item.curriculumCode)
+              .map((item) => item.curriculumCode as string),
+          );
+          setVisitedPeriods([`${existingProgram.key}:${existingContext?.currentPeriod ?? 1}`]);
+          return;
+        }
+
         const firstInstitution = items[0];
         const firstProgram = firstInstitution?.programs[0];
         if (firstInstitution) setInstitutionKey(firstInstitution.key);
@@ -72,13 +115,35 @@ const StudentOnboarding = () => {
     [period, program],
   );
 
+  const selectedSubjects = useMemo(
+    () => program?.subjects.filter((subject) => selectedKeys.includes(subject.key)) ?? [],
+    [program, selectedKeys],
+  );
+
+  const searchResults = useMemo(() => {
+    const query = subjectSearch.trim().toLowerCase();
+    if (!program || query.length < 2) return [];
+
+    return program.subjects
+      .filter((subject) => `${subject.name} ${subject.code ?? ""}`.toLowerCase().includes(query))
+      .slice(0, 12);
+  }, [program, subjectSearch]);
+
   useEffect(() => {
+    if (!program) return;
+    const visitKey = `${program.key}:${period}`;
+    if (visitedPeriods.includes(visitKey)) return;
+
     const timeoutId = window.setTimeout(() => {
-      setSelectedKeys(periodSubjects.map((subject) => subject.key));
+      setSelectedKeys((current) => Array.from(new Set([
+        ...current,
+        ...periodSubjects.map((subject) => subject.key),
+      ])));
+      setVisitedPeriods((current) => current.includes(visitKey) ? current : [...current, visitKey]);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [periodSubjects]);
+  }, [period, periodSubjects, program, visitedPeriods]);
 
   if (isAdmin) return <Navigate to="/admin" replace />;
 
@@ -87,6 +152,36 @@ const StudentOnboarding = () => {
       current.includes(key)
         ? current.filter((item) => item !== key)
         : [...current, key],
+    );
+  };
+
+  const resetCatalogSelection = (nextProgramKey: string, nextPeriod = 1) => {
+    setProgramKey(nextProgramKey);
+    setPeriod(nextPeriod);
+    setSelectedKeys([]);
+    setVisitedPeriods([]);
+    setSubjectSearch("");
+  };
+
+  const subjectChoice = (subject: CatalogSubject, compact = false) => {
+    const selected = selectedKeys.includes(subject.key);
+    return (
+      <button
+        key={subject.key}
+        type="button"
+        onClick={() => toggleSubject(subject.key)}
+        className={`flex items-start gap-3 rounded-2xl border text-left transition ${compact ? "p-3" : "p-4"} ${selected ? "border-primary bg-primary/10" : "border-border bg-surface hover:border-primary/35"}`}
+      >
+        <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-xs font-bold ${selected ? "border-primary bg-primary text-white" : "border-border"}`}>
+          {selected ? "✓" : ""}
+        </span>
+        <span className="min-w-0 flex-1">
+          <strong className="block text-sm text-content">{subject.name}</strong>
+          <span className="mt-1 block text-xs text-muted">
+            {subject.code ?? "Electiva"} · {subject.credits} créditos · Período {subject.period}
+          </span>
+        </span>
+      </button>
     );
   };
 
@@ -144,9 +239,9 @@ const StudentOnboarding = () => {
   };
 
   return (
-    <main className="min-h-screen bg-app-bg px-4 py-8 text-content sm:px-6 lg:py-12">
+    <main className="min-h-screen bg-app-bg px-4 py-8 text-content sm:px-6 lg:py-10">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-7 flex items-center justify-between gap-4">
+        <header className="mb-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-white">ET</div>
             <div>
@@ -159,13 +254,13 @@ const StudentOnboarding = () => {
           </span>
         </header>
 
-        <section className="mb-7 max-w-3xl">
+        <section className="mb-6 max-w-3xl">
           <span className="prototype-eyebrow">Hola {user?.firstName ?? ""}</span>
-          <h1 className="mt-2 text-[clamp(2rem,5vw,3.6rem)] font-bold leading-[1.02] tracking-[-0.045em]">
+          <h1 className="mt-2 text-[clamp(1.9rem,4vw,3.1rem)] font-bold leading-[1.04] tracking-[-0.045em]">
             Primero necesito entender qué estás estudiando.
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            No vas a configurar una plataforma completa. Dime dónde estudias y qué materias llevas; EduTrack se encarga del resto.
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted sm:text-base">
+            Tu período sirve de referencia, pero tus materias reales pueden venir de cualquier período. Tú confirmas la combinación final.
           </p>
         </section>
 
@@ -177,7 +272,7 @@ const StudentOnboarding = () => {
           >
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Automático</span>
             <strong className="mt-1 block text-lg">Mi institución está disponible</strong>
-            <span className="mt-1 block text-sm text-muted">Cargamos el pensum y tú confirmas lo que cursas.</span>
+            <span className="mt-1 block text-sm text-muted">Cargamos el pensum y tú construyes tu período real.</span>
           </button>
           <button
             type="button"
@@ -207,8 +302,7 @@ const StudentOnboarding = () => {
                     const nextKey = event.target.value;
                     setInstitutionKey(nextKey);
                     const nextInstitution = catalog.find((item) => item.key === nextKey);
-                    setProgramKey(nextInstitution?.programs[0]?.key ?? "");
-                    setPeriod(1);
+                    resetCatalogSelection(nextInstitution?.programs[0]?.key ?? "");
                   }}
                   className="min-h-12 rounded-control border border-border bg-app-bg px-3 text-content"
                 >
@@ -220,7 +314,7 @@ const StudentOnboarding = () => {
                 Carrera
                 <select
                   value={programKey}
-                  onChange={(event) => { setProgramKey(event.target.value); setPeriod(1); }}
+                  onChange={(event) => resetCatalogSelection(event.target.value)}
                   className="min-h-12 rounded-control border border-border bg-app-bg px-3 text-content"
                 >
                   {institution?.programs.map((item) => <option key={item.key} value={item.key}>{item.name}</option>)}
@@ -228,7 +322,7 @@ const StudentOnboarding = () => {
               </label>
 
               <label className="grid gap-2 text-sm font-semibold">
-                Período actual
+                Período de referencia
                 <select
                   value={period}
                   onChange={(event) => setPeriod(Number(event.target.value))}
@@ -251,42 +345,74 @@ const StudentOnboarding = () => {
               </div>
             )}
 
-            <div className="mt-7 border-t border-border pt-6">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div className="mt-6 border-t border-border pt-5">
+              <div className="grid gap-4 lg:grid-cols-[1fr_320px] lg:items-end">
                 <div>
-                  <span className="prototype-eyebrow">Confirma tu realidad</span>
-                  <h2 className="mt-1 text-xl font-bold">¿Cuáles de estas materias llevas ahora?</h2>
-                  <p className="mt-1 text-sm text-muted">Las encontramos en tu período. Quita cualquiera que no estés cursando.</p>
+                  <span className="prototype-eyebrow">Construye tu período real</span>
+                  <h2 className="mt-1 text-xl font-bold">Materias del período {period}</h2>
+                  <p className="mt-1 text-sm text-muted">Puedes quitar cualquiera y luego buscar materias de otros períodos sin perder lo ya elegido.</p>
                 </div>
-                <span className="text-sm font-semibold text-primary">{selectedKeys.length} seleccionadas</span>
+                <label className="grid gap-2 text-xs font-semibold text-muted">
+                  Buscar en todo el pensum
+                  <input
+                    value={subjectSearch}
+                    onChange={(event) => setSubjectSearch(event.target.value)}
+                    placeholder="Ej. Programación Web, TDS-008..."
+                    className="min-h-11 rounded-control border border-border bg-app-bg px-4 text-sm text-content outline-none focus:border-primary"
+                  />
+                </label>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                {periodSubjects.map((subject) => {
-                  const selected = selectedKeys.includes(subject.key);
-                  return (
+              {subjectSearch.trim().length >= 2 && (
+                <div className="mt-4 rounded-2xl border border-border bg-surface-muted/40 p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <strong className="text-sm text-content">Resultados en toda la carrera</strong>
+                    <span className="text-xs text-muted">{searchResults.length} encontrados</span>
+                  </div>
+                  {searchResults.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted">No encontré esa materia en este pensum.</p>
+                  ) : (
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {searchResults.map((subject) => subjectChoice(subject, true))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {periodSubjects.map((subject) => subjectChoice(subject))}
+              </div>
+            </div>
+
+            {selectedSubjects.length > 0 && (
+              <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="prototype-eyebrow">Tu selección final</span>
+                    <h3 className="mt-1 font-bold text-content">{selectedSubjects.length} materias activas</h3>
+                  </div>
+                  <span className="text-xs text-muted">Pueden ser de períodos distintos</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedSubjects.map((subject) => (
                     <button
                       key={subject.key}
                       type="button"
                       onClick={() => toggleSubject(subject.key)}
-                      className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${selected ? "border-primary bg-primary/10" : "border-border bg-surface hover:border-primary/35"}`}
+                      className="rounded-full border border-primary/20 bg-surface px-3 py-2 text-xs text-content transition hover:border-danger/40 hover:text-danger"
+                      title="Quitar de tu selección"
                     >
-                      <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-xs font-bold ${selected ? "border-primary bg-primary text-white" : "border-border"}`}>
-                        {selected ? "✓" : ""}
-                      </span>
-                      <span className="min-w-0">
-                        <strong className="block text-sm text-content">{subject.name}</strong>
-                        <span className="mt-1 block text-xs text-muted">{subject.code ?? "Electiva"} · {subject.credits} créditos</span>
-                      </span>
+                      {subject.name} · P{subject.period} ×
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mt-7 flex justify-end">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-muted">El período indica dónde estás; la selección indica lo que realmente cursas.</p>
               <Button loading={saving} disabled={selectedKeys.length === 0} onClick={() => void saveCatalog()}>
-                Preparar mi EduTrack
+                Preparar mi EduTrack · {selectedKeys.length}
               </Button>
             </div>
           </Card>
