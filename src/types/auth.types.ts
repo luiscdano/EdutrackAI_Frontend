@@ -34,6 +34,7 @@ export interface RegisterData {
   avatarUrl?: string;
   institutionKey?: string;
   programKey?: string;
+  institutionName?: string;
 }
 
 export interface AuthData {
